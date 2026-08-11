@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
+import { Button } from "@/components/ui/button";
 import { getSessionContext } from "@/lib/auth/session-context";
 import { resolveDashboardAccess } from "@/lib/auth/dashboard-access";
 import { connectMongo } from "@/lib/db/mongodb";
@@ -48,12 +49,9 @@ const DashboardPage = async () => {
             await signOut({ redirectTo: "/" });
           }}
         >
-          <button
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-            type="submit"
-          >
+          <Button type="submit" variant="outline">
             Sign out
-          </button>
+          </Button>
         </form>
       </header>
 
