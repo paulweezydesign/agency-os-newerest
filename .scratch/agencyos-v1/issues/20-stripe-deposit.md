@@ -4,10 +4,10 @@
 
 **Blocked by:** 09 — Policy gate queue, 03 — Project under Client
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Deposit Checkout session can be created for a Project
-- [ ] Initiating/collecting deposit respects the policy gate
-- [ ] Successful deposit is recorded on the Project
-- [ ] Webhook verification is covered by tests
-- [ ] No e-sign vendor is introduced
+- [x] Deposit Checkout session can be created for a Project
+- [x] Initiating/collecting deposit respects the policy gate
+- [x] Successful deposit is recorded on the Project
+- [x] Webhook verification is covered by tests
+- [x] No e-sign vendor is introduced

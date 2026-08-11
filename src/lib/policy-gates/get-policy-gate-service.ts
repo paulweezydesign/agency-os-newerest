@@ -3,6 +3,8 @@ import { connectMongo } from "@/lib/db/mongodb";
 import { getResendClient } from "@/lib/email/get-resend-client";
 import { getSlackClient } from "@/lib/slack/get-slack-client";
 import { createSlackNotifier } from "@/lib/slack/notify";
+import { createStripeAwareEffectRunner } from "@/lib/stripe/deposit-service";
+import { getStripeClient } from "@/lib/stripe/get-stripe-client";
 import {
   createResendAwareEffectRunner,
   getSharedDemoEffectStore,
@@ -20,14 +22,18 @@ export const getPolicyGateService = async (): Promise<PolicyGateService> => {
     slack: getSlackClient(),
     actionLogs,
   });
+  const base = createResendAwareEffectRunner(
+    getSharedDemoEffectStore(),
+    getResendClient(),
+  );
 
   return createPolicyGateService(
     createMongoosePolicyGateRepository(),
     actionLogs,
-    createResendAwareEffectRunner(
-      getSharedDemoEffectStore(),
-      getResendClient(),
-    ),
+    createStripeAwareEffectRunner({
+      base,
+      stripe: getStripeClient(),
+    }),
     notifier,
   );
 };

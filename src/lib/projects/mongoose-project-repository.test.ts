@@ -57,6 +57,7 @@ describe("createMongooseProjectRepository", () => {
       timelineStart: "2026-09-01",
       timelineEnd: "2026-12-01",
       spend: 0,
+      depositTotal: 0,
     });
     expect(created).toEqual({
       id: "507f1f77bcf86cd799439011",
@@ -65,6 +66,7 @@ describe("createMongooseProjectRepository", () => {
       name: "Website redesign",
       budget: 25000,
       spend: 0,
+      depositTotal: 0,
       timelineStart: "2026-09-01",
       timelineEnd: "2026-12-01",
       githubRepo: null,

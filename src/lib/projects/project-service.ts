@@ -49,6 +49,11 @@ export type ProjectService = {
   bindGithubRepo: (
     input: BindGithubRepoInput & { tenantId: string; projectId: string },
   ) => Promise<Project>;
+  recordDeposit: (input: {
+    tenantId: string;
+    projectId: string;
+    amount: number;
+  }) => Promise<Project>;
 };
 
 export const createProjectService = (
@@ -146,6 +151,28 @@ export const createProjectService = (
       tenantId,
       projectId,
       parsed.githubRepo,
+    );
+
+    if (!updated) {
+      throw new ProjectNotFoundError();
+    }
+
+    return updated;
+  },
+  recordDeposit: async ({ tenantId, projectId, amount }) => {
+    if (!(amount > 0)) {
+      throw new Error("Deposit amount must be positive");
+    }
+
+    const project = await repository.getByTenantAndId(tenantId, projectId);
+    if (!project) {
+      throw new ProjectNotFoundError();
+    }
+
+    const updated = await repository.updateDepositTotalByTenantAndId(
+      tenantId,
+      projectId,
+      project.depositTotal + amount,
     );
 
     if (!updated) {
