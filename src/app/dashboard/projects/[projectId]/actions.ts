@@ -30,6 +30,7 @@ export const createTaskAction = async (
   const headers = new Headers({
     "x-correlation-id": randomUUID(),
   });
+  const assigneeRaw = String(formData.get("assignee") ?? "").trim();
   const result = await handleCreateTask({
     session,
     service,
@@ -37,6 +38,7 @@ export const createTaskAction = async (
     body: {
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
+      assignee: assigneeRaw.length > 0 ? assigneeRaw : null,
     },
     headers,
   });
