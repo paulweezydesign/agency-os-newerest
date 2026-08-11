@@ -161,7 +161,7 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 **Status:** `todo`
 
 - [ ] Figma integration for design review
-- [ ] Slack notifications for gates, sync failures, budget alerts
+- [x] Slack notifications for gates, sync failures, budget alerts (ticket 19)
 - [ ] Stripe Checkout deposits; invoice hooks as Phase 1 allows
 - [ ] Policy gates on money movements
 - [ ] Webhook verification + tests

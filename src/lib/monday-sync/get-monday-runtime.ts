@@ -1,4 +1,8 @@
+import { createMongooseAgentActionLogRepository } from "@/lib/agent-action-logs/mongoose-agent-action-log-repository";
 import { connectMongo } from "@/lib/db/mongodb";
+import { getSlackClient } from "@/lib/slack/get-slack-client";
+import { createSlackNotifier } from "@/lib/slack/notify";
+import { createNotifyingSyncLogRepository } from "@/lib/slack/notifying-sync-log-repository";
 import { createMongooseTaskRepository } from "@/lib/tasks/mongoose-task-repository";
 import type { TaskRepository } from "@/lib/tasks/task-repository";
 import { createInMemoryMondayClient, type MondayClient } from "./monday-client";
@@ -23,8 +27,16 @@ const getSharedMondayClient = (): MondayClient => {
 export const getMondayRuntime = async (): Promise<MondayRuntime> => {
   await connectMongo();
   const tasks = createMongooseTaskRepository();
-  const syncLogs = createMongooseSyncLogRepository();
   const monday = getSharedMondayClient();
+  const notifier = createSlackNotifier({
+    slack: getSlackClient(),
+    actionLogs: createMongooseAgentActionLogRepository(),
+  });
+  const syncLogs = createNotifyingSyncLogRepository(
+    createMongooseSyncLogRepository(),
+    notifier,
+    "monday",
+  );
 
   return {
     tasks,
