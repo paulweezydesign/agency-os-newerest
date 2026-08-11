@@ -132,4 +132,31 @@ describe("createProjectService", () => {
       }),
     ).rejects.toThrow(/client/i);
   });
+
+  it("binds a GitHub owner/name repo to a project", async () => {
+    const { clients, projects } = createServices();
+    const client = await clients.create({
+      tenantId: "tenant-a",
+      name: "Acme Co",
+    });
+    const created = await projects.create({
+      tenantId: "tenant-a",
+      clientId: client.id,
+      name: "Website redesign",
+      budget: 25000,
+      timelineStart: "2026-09-01",
+      timelineEnd: "2026-12-01",
+    });
+
+    const bound = await projects.bindGithubRepo({
+      tenantId: "tenant-a",
+      projectId: created.id,
+      githubRepo: "acme/website",
+    });
+
+    expect(bound.githubRepo).toBe("acme/website");
+    expect((await projects.get("tenant-a", created.id))?.githubRepo).toBe(
+      "acme/website",
+    );
+  });
 });

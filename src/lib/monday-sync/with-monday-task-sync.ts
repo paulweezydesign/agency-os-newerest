@@ -8,6 +8,7 @@ export const withMondayTaskSync = (
   sync: SyncFn,
 ): TaskService => ({
   listByProject: service.listByProject,
+  get: service.get,
   create: async (input) => {
     const created = await service.create(input);
     const { task } = await sync(created);

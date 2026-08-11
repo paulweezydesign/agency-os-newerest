@@ -11,6 +11,7 @@ import {
 import { getProjectService } from "@/lib/projects/get-project-service";
 import { handleListTasksForProject } from "@/lib/tasks/tasks-api";
 import { getTaskService } from "@/lib/tasks/get-task-service";
+import { BindGithubForm } from "./bind-github-form";
 import { CreateTaskForm } from "./create-task-form";
 import { RecordSpendForm } from "./record-spend-form";
 import { TaskBoard } from "./task-board";
@@ -137,6 +138,23 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">GitHub binding</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Link a client repo (`owner/name`). Agents may open branches and PRs;
+          merging stays human-owned.
+        </p>
+        <p className="mt-2 text-sm font-medium text-slate-900">
+          Bound repo: {project.githubRepo ?? "none"}
+        </p>
+        <div className="mt-4">
+          <BindGithubForm
+            projectId={projectId}
+            githubRepo={project.githubRepo}
+          />
+        </div>
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

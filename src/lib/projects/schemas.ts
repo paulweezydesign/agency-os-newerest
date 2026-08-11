@@ -21,7 +21,18 @@ export const projectSchema = z.object({
   spend: z.number().nonnegative(),
   timelineStart: z.string().min(1),
   timelineEnd: z.string().min(1),
+  githubRepo: z.string().nullable().optional(),
   createdAt: z.string().min(1),
+});
+
+export const bindGithubRepoInputSchema = z.object({
+  githubRepo: z
+    .string()
+    .trim()
+    .regex(
+      /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/,
+      "GitHub repo must be owner/name",
+    ),
 });
 
 export const recordProjectSpendInputSchema = z.object({
@@ -40,6 +51,7 @@ export const budgetAlertSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
 export type Project = z.infer<typeof projectSchema>;
+export type BindGithubRepoInput = z.infer<typeof bindGithubRepoInputSchema>;
 export type RecordProjectSpendInput = z.infer<
   typeof recordProjectSpendInputSchema
 >;

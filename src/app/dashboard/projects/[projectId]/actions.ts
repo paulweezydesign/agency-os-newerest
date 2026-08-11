@@ -4,7 +4,10 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
-import { handleRecordProjectSpend } from "@/lib/projects/projects-api";
+import {
+  handleBindGithubRepo,
+  handleRecordProjectSpend,
+} from "@/lib/projects/projects-api";
 import { getProjectService } from "@/lib/projects/get-project-service";
 import {
   handleCreateTask,
@@ -17,6 +20,10 @@ export type TaskActionState = {
 };
 
 export type SpendActionState = {
+  error?: string;
+};
+
+export type GithubBindActionState = {
   error?: string;
 };
 
@@ -99,5 +106,34 @@ export const recordProjectSpendAction = async (
   return {
     error:
       "error" in result.body ? result.body.error : "Unable to record spend",
+  };
+};
+
+export const bindGithubRepoAction = async (
+  projectId: string,
+  _prev: GithubBindActionState,
+  formData: FormData,
+): Promise<GithubBindActionState> => {
+  const session = toAuthSession(await auth());
+  const service = await getProjectService();
+  const result = await handleBindGithubRepo({
+    session,
+    service,
+    projectId,
+    body: {
+      githubRepo: String(formData.get("githubRepo") ?? ""),
+    },
+  });
+
+  if (result.status === 200) {
+    revalidatePath(`/dashboard/projects/${projectId}`);
+    return {};
+  }
+
+  return {
+    error:
+      "error" in result.body
+        ? result.body.error
+        : "Unable to bind GitHub repo",
   };
 };

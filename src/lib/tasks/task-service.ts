@@ -33,6 +33,7 @@ export type TaskService = {
     },
   ) => Promise<Task>;
   listByProject: (tenantId: string, projectId: string) => Promise<Task[]>;
+  get: (tenantId: string, taskId: string) => Promise<Task | null>;
   update: (
     input: UpdateTaskInput & {
       tenantId: string;
@@ -87,6 +88,7 @@ export const createTaskService = (
   },
   listByProject: (tenantId, projectId) =>
     repository.listByTenantAndProject(tenantId, projectId),
+  get: (tenantId, taskId) => repository.getByTenantAndId(tenantId, taskId),
   update: async ({
     tenantId,
     taskId,

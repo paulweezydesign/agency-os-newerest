@@ -1,15 +1,18 @@
 import { Mastra } from "@mastra/core";
-import { createProjectManagerAgent } from "./agents/project-manager";
-import type { ProjectManagerToolDeps } from "./tools/task-tools";
+import {
+  createProjectManagerAgent,
+  type ProjectManagerAgentDeps,
+} from "./agents/project-manager";
+import { createProjectManagerGithubTools } from "./tools/github-tools";
 import { createProjectManagerTaskTools } from "./tools/task-tools";
 
 export type CreateMastraAppOptions = {
-  projectManagerDeps?: ProjectManagerToolDeps;
+  projectManagerDeps?: ProjectManagerAgentDeps;
 };
 
 /**
  * Mastra app seam for AgencyOS.
- * Registers the Project Manager agent + task tools when deps are provided.
+ * Registers the Project Manager agent + task/GitHub tools when deps are provided.
  * Production routes resolve a live agent via getProjectManagerAgent.
  */
 export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
@@ -23,7 +26,10 @@ export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
     });
   }
 
-  const tools = createProjectManagerTaskTools(projectManagerDeps);
+  const tools = {
+    ...createProjectManagerTaskTools(projectManagerDeps),
+    ...createProjectManagerGithubTools(projectManagerDeps),
+  };
   const projectManager = createProjectManagerAgent(projectManagerDeps);
 
   return new Mastra({
@@ -43,3 +49,4 @@ export {
   PROJECT_MANAGER_AGENT_NAME,
   createProjectManagerTaskTools,
 } from "./tools/task-tools";
+export { createProjectManagerGithubTools } from "./tools/github-tools";

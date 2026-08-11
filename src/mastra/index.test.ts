@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
+import { createInMemoryGitHubClient } from "@/lib/github/github-client";
+import { createInMemoryBudgetAlertRepository } from "@/lib/projects/budget-alert-repository";
 import { createInMemoryProjectRepository } from "@/lib/projects/project-repository";
 import { createProjectService } from "@/lib/projects/project-service";
 import { createInMemoryTaskRepository } from "@/lib/tasks/task-repository";
@@ -21,21 +23,27 @@ describe("createMastraApp", () => {
     expect(mastra.listAgents()).toEqual({});
   });
 
-  it("registers the project-manager agent and task tools when deps are provided", () => {
+  it("registers the project-manager agent and task/GitHub tools when deps are provided", () => {
     const clients = createClientService(createInMemoryClientRepository());
-    const projects = createProjectService(
+    const projectService = createProjectService(
       createInMemoryProjectRepository(),
       clients,
+      createInMemoryBudgetAlertRepository(),
     );
     const actionLogs = createInMemoryAgentActionLogRepository();
     const taskService = createTaskService(
       createInMemoryTaskRepository(),
-      projects,
+      projectService,
       actionLogs,
     );
 
     const app = createMastraApp({
-      projectManagerDeps: { taskService, actionLogs },
+      projectManagerDeps: {
+        taskService,
+        actionLogs,
+        projectService,
+        github: createInMemoryGitHubClient(),
+      },
     });
 
     const agents = app.listAgents();
@@ -43,6 +51,10 @@ describe("createMastraApp", () => {
     expect(agents.projectManager.id).toBe("project-manager");
 
     const tools = app.listTools() ?? {};
-    expect(Object.keys(tools).sort()).toEqual(["createTask", "listTasks"]);
+    expect(Object.keys(tools).sort()).toEqual([
+      "createTask",
+      "listTasks",
+      "openPullRequestFromTask",
+    ]);
   });
 });
