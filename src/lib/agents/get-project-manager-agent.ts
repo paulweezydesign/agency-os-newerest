@@ -6,6 +6,7 @@ import {
   createProjectManagerAgent,
   type ProjectManagerAgent,
 } from "@/mastra/agents/project-manager";
+import { getSpawnService } from "./get-spawn-service";
 
 let cached: ProjectManagerAgent | null = null;
 
@@ -16,6 +17,7 @@ export const getProjectManagerAgent = async (): Promise<ProjectManagerAgent> => 
 
   const taskService = await getTaskService();
   const projectService = await getProjectService();
+  const spawnService = await getSpawnService();
   const actionLogs = createMongooseAgentActionLogRepository();
 
   cached = createProjectManagerAgent({
@@ -23,6 +25,7 @@ export const getProjectManagerAgent = async (): Promise<ProjectManagerAgent> => 
     actionLogs,
     projectService,
     github: getGitHubClient(),
+    spawnService,
   });
   return cached;
 };

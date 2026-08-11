@@ -114,12 +114,12 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 
 ## Slice F — Seed roster + policy gates + spawn
 
-**Status:** `in_progress`
+**Status:** `done`
 
-- [ ] Seed agents: tech-lead, design, research, frontend, backend, qa, prospector, nurture, onboarding (+ PM from C)
-- [ ] Per-agent tool scopes + safety rules
+- [x] Seed agents: tech-lead, design, research, frontend, backend, qa, prospector, nurture, onboarding (+ PM from C) (ticket 10)
+- [x] Per-agent tool scopes + safety rules (ticket 10)
 - [x] Policy-gate service: client email, SOW send, invoice/deposit → approve queue (ticket 09)
-- [ ] Dynamic spawn tool with **cap 10**/project + justification in action log
+- [x] Dynamic spawn tool with **cap 10**/project + justification in action log (ticket 10)
 - [x] Operator UI: approve/deny gated actions (ticket 09)
 
 **Exit:** full seed roster runnable; gated actions block until approved; spawn enforced.
@@ -205,4 +205,4 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 | 2026-08-11 | Ticket 04: Tasks + AgentActionLog audit; Slice B done; 43 tests green |
 | 2026-08-11 | Ticket 08: Monday status/assignee mirror + sync logs; Slice E in progress |
 | 2026-08-11 | Ticket 09: Policy gate queue (pending/approve/deny + demo effect); Slice F in progress |
-| 2026-08-11 | Ticket 11: Brief → SOW → MVP scaffold artifacts + gated SOW send; Slice G in progress |
+| 2026-08-11 | Ticket 10: Seed roster teammates + spawnTeammate cap 10; Slice F done |

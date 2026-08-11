@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
+import { SEED_TEAMMATE_ROLES } from "@/lib/agents/seed-roster";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
 import { createInMemoryGitHubClient } from "@/lib/github/github-client";
@@ -23,7 +24,7 @@ describe("createMastraApp", () => {
     expect(mastra.listAgents()).toEqual({});
   });
 
-  it("registers the project-manager agent and task/GitHub tools when deps are provided", () => {
+  it("registers PM, seed teammates, and tools when deps are provided", () => {
     const clients = createClientService(createInMemoryClientRepository());
     const projectService = createProjectService(
       createInMemoryProjectRepository(),
@@ -47,7 +48,10 @@ describe("createMastraApp", () => {
     });
 
     const agents = app.listAgents();
-    expect(Object.keys(agents)).toEqual(["projectManager"]);
+    const agentIds = Object.values(agents).map((agent) => agent.id).sort();
+    expect(agentIds).toEqual(
+      ["project-manager", ...SEED_TEAMMATE_ROLES].sort(),
+    );
     expect(agents.projectManager.id).toBe("project-manager");
 
     const tools = app.listTools() ?? {};
@@ -55,6 +59,7 @@ describe("createMastraApp", () => {
       "createTask",
       "listTasks",
       "openPullRequestFromTask",
+      "reportStatus",
     ]);
   });
 });
