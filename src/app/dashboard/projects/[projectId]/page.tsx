@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { resolveDashboardAccess } from "@/lib/auth/dashboard-access";
 import { getSessionContext } from "@/lib/auth/session-context";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
+import { handleListArtifacts } from "@/lib/project-artifacts/artifacts-api";
+import { getArtifactService } from "@/lib/project-artifacts/get-artifact-service";
 import {
   handleGetProject,
   handleListBudgetAlerts,
@@ -12,8 +14,10 @@ import { getProjectService } from "@/lib/projects/get-project-service";
 import { handleListTasksForProject } from "@/lib/tasks/tasks-api";
 import { getTaskService } from "@/lib/tasks/get-task-service";
 import { BindGithubForm } from "./bind-github-form";
+import { CreateArtifactForm } from "./create-artifact-form";
 import { CreateTaskForm } from "./create-task-form";
 import { RecordSpendForm } from "./record-spend-form";
+import { SendSowButton } from "./send-sow-button";
 import { TaskBoard } from "./task-board";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +38,7 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
 
   const projectService = await getProjectService();
   const taskService = await getTaskService();
+  const artifactService = await getArtifactService();
   const result = await handleGetProject({
     session: authSession,
     service: projectService,
@@ -61,6 +66,12 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
     projectId,
   });
   const alerts = alertsResult.status === 200 ? alertsResult.body : [];
+  const artifactsResult = await handleListArtifacts({
+    session: authSession,
+    service: artifactService,
+    projectId,
+  });
+  const artifacts = artifactsResult.status === 200 ? artifactsResult.body : [];
   const burnPercent =
     project.budget > 0
       ? Math.round((project.spend / project.budget) * 100)
@@ -134,6 +145,55 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
               >
                 {alert.threshold}% of budget crossed — spend {alert.spend} /{" "}
                 {alert.budget} at {new Date(alert.createdAt).toLocaleString()}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">
+          Delivery artifacts
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Brief, SOW, and MVP scaffold for this project. Sending a SOW to the
+          Client opens a pending policy gate; approve on the policy gates page
+          to run the demo send effect.
+        </p>
+        <div className="mt-4">
+          <CreateArtifactForm projectId={projectId} />
+        </div>
+        {artifacts.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">No artifacts yet.</p>
+        ) : (
+          <ul className="mt-4 grid gap-3">
+            {artifacts.map((artifact) => (
+              <li
+                key={artifact.id}
+                className="rounded-md border border-slate-200 px-4 py-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      {artifact.kind}
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {artifact.title}
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                      {artifact.body}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {new Date(artifact.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  {artifact.kind === "sow" ? (
+                    <SendSowButton
+                      projectId={projectId}
+                      artifactId={artifact.id}
+                    />
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

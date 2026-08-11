@@ -128,12 +128,12 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 
 ## Slice G — Agency skills + Exa/Resend + client pipeline
 
-**Status:** `todo`
+**Status:** `in_progress`
 
-- [ ] Tools: `createProjectBrief`, `generateSOW`, `buildMVPScaffold`
+- [x] Tools: `createProjectBrief`, `generateSOW`, `buildMVPScaffold` (ticket 11)
 - [ ] Workflows: `agency-delivery`, `client-pipeline` (lead score branching), plus stubs for lifecycle/sprint/code-review as needed
 - [ ] Exa search tools; Resend email tools (client sends gated)
-- [ ] Persist brief/SOW/scaffold on Project; show on project detail
+- [x] Persist brief/SOW/scaffold on Project; show on project detail (ticket 11; SOW send policy-gated)
 - [ ] RAG ingest/query baseline for Research (`text-embedding-3-small`, source attribution)
 - [ ] Integration tests for delivery + pipeline happy paths
 
