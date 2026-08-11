@@ -9,6 +9,8 @@ const toTask = (doc: {
   title: string;
   description: string;
   status: TaskStatus;
+  assignee?: string | null;
+  mondayItemId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Task => ({
@@ -18,6 +20,8 @@ const toTask = (doc: {
   title: doc.title,
   description: doc.description,
   status: doc.status,
+  assignee: doc.assignee ?? null,
+  mondayItemId: doc.mondayItemId ?? null,
   createdAt: doc.createdAt.toISOString(),
   updatedAt: doc.updatedAt.toISOString(),
 });
@@ -25,7 +29,11 @@ const toTask = (doc: {
 export const createMongooseTaskRepository = (): TaskRepository => ({
   create: async (input: TaskCreateRecord) => {
     const model = getTaskModel();
-    const doc = await model.create(input);
+    const doc = await model.create({
+      ...input,
+      assignee: input.assignee,
+      mondayItemId: input.mondayItemId ?? null,
+    });
     return toTask(doc);
   },
   listByTenantAndProject: async (tenantId, projectId) => {
@@ -42,6 +50,11 @@ export const createMongooseTaskRepository = (): TaskRepository => ({
       return null;
     }
     const doc = await model.findOne({ _id: id, tenantId }).exec();
+    return doc ? toTask(doc) : null;
+  },
+  getByMondayItemId: async (mondayItemId) => {
+    const model = getTaskModel();
+    const doc = await model.findOne({ mondayItemId }).exec();
     return doc ? toTask(doc) : null;
   },
   updateByTenantAndId: async (tenantId, id, patch: TaskUpdateRecord) => {

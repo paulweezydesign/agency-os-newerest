@@ -5,12 +5,14 @@ export const taskStatusSchema = z.enum(["todo", "in_progress", "done"]);
 export const createTaskInputSchema = z.object({
   title: z.string().trim().min(1, "Task title is required"),
   description: z.string().trim().optional(),
+  assignee: z.string().trim().min(1).nullable().optional(),
 });
 
 export const updateTaskInputSchema = z.object({
   title: z.string().trim().min(1).optional(),
   description: z.string().trim().optional(),
   status: taskStatusSchema.optional(),
+  assignee: z.string().trim().min(1).nullable().optional(),
 });
 
 export const taskSchema = z.object({
@@ -20,6 +22,8 @@ export const taskSchema = z.object({
   title: z.string().min(1),
   description: z.string(),
   status: taskStatusSchema,
+  assignee: z.string().nullable(),
+  mondayItemId: z.string().nullable(),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 });
