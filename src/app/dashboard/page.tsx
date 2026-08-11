@@ -43,8 +43,8 @@ const DashboardPage = async () => {
             Dashboard
           </h1>
           <p className="mt-2 text-slate-600">
-            Operator shell. Open Clients for CRM, or chat with the Project
-            Manager agent.
+            Operator shell. Open Clients for CRM, review policy gates, or chat
+            with the Project Manager agent.
           </p>
         </div>
         <div className="flex gap-2">
@@ -53,6 +53,12 @@ const DashboardPage = async () => {
             className="inline-flex h-8 items-center rounded-lg border border-teal-800 px-2.5 text-sm font-medium text-teal-900 hover:bg-teal-50"
           >
             Project Manager
+          </Link>
+          <Link
+            href="/dashboard/policy-gates"
+            className="inline-flex h-8 items-center rounded-lg border border-teal-800 px-2.5 text-sm font-medium text-teal-900 hover:bg-teal-50"
+          >
+            Policy gates
           </Link>
           <Link
             href="/dashboard/clients"

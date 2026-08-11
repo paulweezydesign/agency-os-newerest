@@ -4,10 +4,10 @@
 
 **Blocked by:** 05 — Project Manager agent chat
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Gated actions create a pending approval item instead of executing
-- [ ] Admin or agent-operator can approve or deny from the UI
-- [ ] Approve executes the side effect once; deny does not
-- [ ] Gate decisions are written to AgentActionLog
-- [ ] Tests cover pending/approve/deny paths
+- [x] Gated actions create a pending approval item instead of executing
+- [x] Admin or agent-operator can approve or deny from the UI
+- [x] Approve executes the side effect once; deny does not
+- [x] Gate decisions are written to AgentActionLog
+- [x] Tests cover pending/approve/deny paths

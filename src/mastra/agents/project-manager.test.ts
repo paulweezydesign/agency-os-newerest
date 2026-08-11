@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
-import { createInMemoryGitHubClient } from "@/lib/github/github-client";
 import { createInMemoryBudgetAlertRepository } from "@/lib/projects/budget-alert-repository";
 import { createInMemoryProjectRepository } from "@/lib/projects/project-repository";
 import { createProjectService } from "@/lib/projects/project-service";
@@ -38,8 +37,17 @@ const createAgentDeps = () => {
 describe("project-manager agent", () => {
   it("instructions enforce orchestrate-only (no deliverable execution)", () => {
     expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/orchestrat/i);
-    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(
-      /does not complete deliverable work/i,
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/does not complete deliverable work/i);
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/listTasks|createTask/);
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/tools only|through tools/i);
+  });
+
+  it("exposes listTasks and createTask tools only", async () => {
+    const clients = createClientService(createInMemoryClientRepository());
+    const projects = createProjectService(
+      createInMemoryProjectRepository(),
+      clients,
+      createInMemoryBudgetAlertRepository(),
     );
     expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(
       /listTasks|createTask|openPullRequestFromTask/,
