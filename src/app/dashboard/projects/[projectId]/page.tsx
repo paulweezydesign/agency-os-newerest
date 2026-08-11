@@ -13,8 +13,10 @@ import {
 import { getProjectService } from "@/lib/projects/get-project-service";
 import { handleListTasksForProject } from "@/lib/tasks/tasks-api";
 import { getTaskService } from "@/lib/tasks/get-task-service";
+import { getDesignReviewService } from "@/lib/design-reviews/get-design-review-service";
 import { BindGithubForm } from "./bind-github-form";
 import { CreateArtifactForm } from "./create-artifact-form";
+import { CreateDesignReviewForm } from "./create-design-review-form";
 import { CreateTaskForm } from "./create-task-form";
 import { RecordSpendForm } from "./record-spend-form";
 import { SendSowButton } from "./send-sow-button";
@@ -38,6 +40,9 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
 
   const projectService = await getProjectService();
   const taskService = await getTaskService();
+  const designReviews = await (
+    await getDesignReviewService()
+  ).listByProject(context!.tenantId, projectId);
   const artifactService = await getArtifactService();
   const result = await handleGetProject({
     session: authSession,
@@ -194,6 +199,41 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
                     />
                   ) : null}
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">Design reviews</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Upload a design asset URL for Client annotate/approve in the portal
+          (Figma deep-link comes later).
+        </p>
+        <div className="mt-4">
+          <CreateDesignReviewForm projectId={projectId} />
+        </div>
+        {designReviews.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">No design reviews yet.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {designReviews.map((review) => (
+              <li key={review.id} className="py-3 text-sm">
+                <p className="font-medium text-slate-900">
+                  {review.title}{" "}
+                  <span className="text-xs uppercase text-slate-500">
+                    {review.status}
+                  </span>
+                </p>
+                <a
+                  href={review.assetUrl}
+                  className="text-teal-800 hover:underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {review.assetUrl}
+                </a>
               </li>
             ))}
           </ul>

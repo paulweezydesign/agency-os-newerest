@@ -5,9 +5,11 @@ import { findSeedClientIdForUser } from "@/lib/auth/seed-users";
 import { resolvePortalAccess } from "@/lib/auth/portal-access";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
 import { getClientService } from "@/lib/clients/get-client-service";
+import { getDesignReviewService } from "@/lib/design-reviews/get-design-review-service";
 import { getArtifactService } from "@/lib/project-artifacts/get-artifact-service";
 import { handleGetPortalProject } from "@/lib/portal/portal-api";
 import { getProjectService } from "@/lib/projects/get-project-service";
+import { DesignReviewActions } from "./design-review-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,9 @@ const PortalProjectPage = async ({ params }: PortalProjectPageProps) => {
   }
 
   const { project, artifacts } = result.body;
+  const designReviews = await (
+    await getDesignReviewService()
+  ).listByProject(access.context.tenantId, projectId);
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
@@ -75,6 +80,45 @@ const PortalProjectPage = async ({ params }: PortalProjectPageProps) => {
           <p className="text-xs uppercase tracking-wide text-slate-500">Spend</p>
           <p className="mt-1 font-medium">{project.spend}</p>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="text-lg font-medium text-slate-900">Design reviews</h2>
+        {designReviews.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">No design reviews yet.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {designReviews.map((review) => (
+              <li key={review.id} className="py-3">
+                <p className="font-medium text-slate-900">
+                  {review.title}{" "}
+                  <span className="text-xs uppercase text-slate-500">
+                    {review.status}
+                  </span>
+                </p>
+                <a
+                  href={review.assetUrl}
+                  className="text-sm text-teal-800 hover:underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open asset
+                </a>
+                {review.annotation ? (
+                  <p className="mt-1 text-sm text-slate-600">
+                    Annotation: {review.annotation}
+                  </p>
+                ) : null}
+                {review.status === "pending" || review.status === "annotated" ? (
+                  <DesignReviewActions
+                    projectId={projectId}
+                    reviewId={review.id}
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
