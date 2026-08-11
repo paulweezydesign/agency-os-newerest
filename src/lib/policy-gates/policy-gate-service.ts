@@ -1,4 +1,5 @@
 import type { AgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
+import type { SlackNotifier } from "@/lib/slack/notify";
 import type { PolicyGateRepository } from "./policy-gate-repository";
 import {
   decidePolicyGateInputSchema,
@@ -57,6 +58,7 @@ export const createPolicyGateService = (
   repository: PolicyGateRepository,
   actionLogs: AgentActionLogRepository,
   runEffect: PolicyGateEffectRunner,
+  notifier?: Pick<SlackNotifier, "notifyPolicyGate">,
 ): PolicyGateService => ({
   request: async ({
     tenantId,
@@ -94,6 +96,13 @@ export const createPolicyGateService = (
       status: "success",
       correlationId,
       projectId: parsed.projectId,
+    });
+
+    await notifier?.notifyPolicyGate({
+      tenantId,
+      event: "requested",
+      gate,
+      correlationId,
     });
 
     return gate;
@@ -142,6 +151,13 @@ export const createPolicyGateService = (
       projectId: gate.projectId,
     });
 
+    await notifier?.notifyPolicyGate({
+      tenantId,
+      event: "approved",
+      gate,
+      correlationId,
+    });
+
     return gate;
   },
   deny: async ({ tenantId, gateId, decidedBy, correlationId }) => {
@@ -177,6 +193,13 @@ export const createPolicyGateService = (
       status: "success",
       correlationId,
       projectId: gate.projectId,
+    });
+
+    await notifier?.notifyPolicyGate({
+      tenantId,
+      event: "denied",
+      gate,
+      correlationId,
     });
 
     return gate;

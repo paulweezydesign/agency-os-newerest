@@ -30,18 +30,30 @@ export const createMongooseClientRepository = (): ClientRepository => ({
   create: async ({
     tenantId,
     name,
+    id,
     contactEmail,
     pipelineStage = DEFAULT_PIPELINE_STAGE,
     leadScore = DEFAULT_LEAD_SCORE,
   }) => {
     const model = getClientModel();
-    const doc = await model.create({
-      tenantId,
-      name,
-      contactEmail,
-      pipelineStage,
-      leadScore,
-    });
+    const doc = await model.create(
+      id
+        ? {
+            _id: id,
+            tenantId,
+            name,
+            contactEmail,
+            pipelineStage,
+            leadScore,
+          }
+        : {
+            tenantId,
+            name,
+            contactEmail,
+            pipelineStage,
+            leadScore,
+          },
+    );
     return toClient(doc);
   },
   listByTenant: async (tenantId) => {

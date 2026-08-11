@@ -17,6 +17,7 @@ export type ClientService = {
   create: (input: {
     tenantId: string;
     name: string;
+    id?: string;
     contactEmail?: string;
   }) => Promise<Client>;
   list: (tenantId: string) => Promise<Client[]>;
@@ -31,11 +32,12 @@ export type ClientService = {
 export const createClientService = (
   repository: ClientRepository,
 ): ClientService => ({
-  create: async ({ tenantId, name, contactEmail }) => {
+  create: async ({ tenantId, name, id, contactEmail }) => {
     const parsed = createClientInputSchema.parse({ name, contactEmail });
     return repository.create({
       tenantId,
       name: parsed.name,
+      id,
       contactEmail: parsed.contactEmail,
     });
   },

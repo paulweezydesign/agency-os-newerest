@@ -1,5 +1,8 @@
 export const DEFAULT_TENANT_ID = "tenant-default";
 
+/** Stable demo Client ObjectId used by the seed client portal user. */
+export const SEED_CLIENT_ID = "507f1f77bcf86cd7994390aa";
+
 export type AppRole = "admin" | "agent-operator" | "client";
 
 export type SeedUser = {
@@ -9,6 +12,7 @@ export type SeedUser = {
   role: AppRole;
   tenantId: string;
   name: string;
+  clientId?: string;
 };
 
 export const seedUsers: readonly SeedUser[] = [
@@ -28,6 +32,15 @@ export const seedUsers: readonly SeedUser[] = [
     tenantId: DEFAULT_TENANT_ID,
     name: "Agent Operator",
   },
+  {
+    id: "user-client",
+    email: "client@agencyos.local",
+    password: "client-dev",
+    role: "client",
+    tenantId: DEFAULT_TENANT_ID,
+    name: "Acme Client",
+    clientId: SEED_CLIENT_ID,
+  },
 ] as const;
 
 export const findSeedUser = (
@@ -37,3 +50,6 @@ export const findSeedUser = (
   seedUsers.find(
     (user) => user.email === email && user.password === password,
   );
+
+export const findSeedClientIdForUser = (userId: string): string | null =>
+  seedUsers.find((user) => user.id === userId)?.clientId ?? null;

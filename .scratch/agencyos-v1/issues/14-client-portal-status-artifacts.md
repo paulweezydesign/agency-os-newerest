@@ -4,10 +4,10 @@
 
 **Blocked by:** 03 — Project under Client, 11 — Brief → SOW → MVP scaffold
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Client role can sign in and reach `(portal)` routes only
-- [ ] Portal shows Project status for the Client’s Projects
-- [ ] Portal shows delivery artifacts for a Project
-- [ ] Client cannot access agent-operator dashboard routes
-- [ ] Tests cover portal RBAC allow/deny
+- [x] Client role can sign in and reach `(portal)` routes only
+- [x] Portal shows Project status for the Client’s Projects
+- [x] Portal shows delivery artifacts for a Project
+- [x] Client cannot access agent-operator dashboard routes
+- [x] Tests cover portal RBAC allow/deny

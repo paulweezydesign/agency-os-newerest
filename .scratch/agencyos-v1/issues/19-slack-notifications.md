@@ -4,10 +4,10 @@
 
 **Blocked by:** 09 — Policy gate queue, 16 — Budget guardrails
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Policy-gate create/approve/deny can notify Slack
-- [ ] Budget 80/100/120 alerts can notify Slack
-- [ ] Tracker sync failures can notify Slack
-- [ ] Notification sends are logged; failures are actionable
-- [ ] Tests cover notification triggers with mocked Slack
+- [x] Policy-gate create/approve/deny can notify Slack
+- [x] Budget 80/100/120 alerts can notify Slack
+- [x] Tracker sync failures can notify Slack
+- [x] Notification sends are logged; failures are actionable
+- [x] Tests cover notification triggers with mocked Slack

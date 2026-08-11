@@ -9,6 +9,7 @@ import {
 export type CreateClientRecordInput = {
   tenantId: string;
   name: string;
+  id?: string;
   contactEmail?: string;
   pipelineStage?: PipelineStage;
   leadScore?: number;
@@ -41,12 +42,13 @@ export const createInMemoryClientRepository = (): ClientRepository => {
     create: async ({
       tenantId,
       name,
+      id,
       contactEmail,
       pipelineStage = DEFAULT_PIPELINE_STAGE,
       leadScore = DEFAULT_LEAD_SCORE,
     }) => {
       const client: Client = {
-        id: randomUUID(),
+        id: id ?? randomUUID(),
         tenantId,
         name,
         contactEmail,

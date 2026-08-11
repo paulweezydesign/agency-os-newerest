@@ -143,9 +143,9 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 
 ## Slice H — Client portal + Phase 1 human surfaces
 
-**Status:** `todo`
+**Status:** `in_progress`
 
-- [ ] `(portal)` routes: status, approvals, artifacts (client role)
+- [x] `(portal)` routes: status + artifacts (client role) (ticket 14; approvals later)
 - [ ] Design review (upload/annotate path; Figma deep-link later in I)
 - [x] Budget guardrails (80/100/120% alerts) on Project
 - [ ] Change requests + UAT checklist (Phase 1 core)
@@ -161,7 +161,7 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 **Status:** `todo`
 
 - [ ] Figma integration for design review
-- [ ] Slack notifications for gates, sync failures, budget alerts
+- [x] Slack notifications for gates, sync failures, budget alerts (ticket 19)
 - [ ] Stripe Checkout deposits; invoice hooks as Phase 1 allows
 - [ ] Policy gates on money movements
 - [ ] Webhook verification + tests
