@@ -14,6 +14,8 @@ describe("createClientService", () => {
     expect(created).toMatchObject({
       tenantId: "tenant-a",
       name: "Acme Co",
+      pipelineStage: "lead",
+      leadScore: 0,
     });
     expect(created.id).toBeTruthy();
     expect(created.createdAt).toBeTruthy();

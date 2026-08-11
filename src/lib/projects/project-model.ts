@@ -7,6 +7,7 @@ const projectSchema = new Schema(
     name: { type: String, required: true },
     budget: { type: Number, required: true, min: 0 },
     spend: { type: Number, required: true, min: 0, default: 0 },
+    depositTotal: { type: Number, required: true, min: 0, default: 0 },
     timelineStart: { type: String, required: true },
     timelineEnd: { type: String, required: true },
     githubRepo: { type: String, required: false, default: null },

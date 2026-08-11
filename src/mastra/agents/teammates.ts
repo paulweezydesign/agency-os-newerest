@@ -1,15 +1,21 @@
 import { Agent } from "@mastra/core/agent";
 import type { AgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
+import type { ClientPipelineService } from "@/lib/client-pipeline/client-pipeline-service";
 import {
   SEED_TEAMMATE_ROLES,
   isSeedTeammateRole,
   teammateSafetyRules,
   type SeedTeammateRole,
 } from "@/lib/agents/seed-roster";
+import {
+  createResearchTools,
+  type ResearchToolDeps,
+} from "../tools/search-tools";
 import { createTeammateTools } from "../tools/teammate-tools";
 
 export type TeammateAgentDeps = {
   actionLogs: AgentActionLogRepository;
+  research?: Omit<ResearchToolDeps, "actionLogs">;
 };
 
 export type SpawnedTeammateOptions = {
@@ -17,6 +23,12 @@ export type SpawnedTeammateOptions = {
   specialization: string;
   justification: string;
 };
+
+const PIPELINE_ROLES: readonly SeedTeammateRole[] = [
+  "prospector",
+  "nurture",
+  "onboarding",
+];
 
 const displayNameForRole = (role: SeedTeammateRole): string => {
   switch (role) {
@@ -45,31 +57,54 @@ const displayNameForRole = (role: SeedTeammateRole): string => {
   }
 };
 
-const buildTeammateInstructions = (role: SeedTeammateRole): string =>
-  `You are the ${displayNameForRole(role)} teammate agent for AgencyOS.
+const buildTeammateInstructions = (role: SeedTeammateRole): string => {
+  const researchHint =
+    role === "research"
+      ? `
+- exaSearch: search the web via Exa
+- ingestDocument: store knowledge for later RAG queries
+- queryKnowledge: answer with source attribution from ingested docs`
+      : "";
+
+  return `You are the ${displayNameForRole(role)} teammate agent for AgencyOS.
 
 You execute assigned work under Project Manager delegation only.
 Safety rules: ${teammateSafetyRules(role)}
 
 Operate through tools only:
-- reportStatus: report progress, completion, or blockers on assigned work
+- reportStatus: report progress, completion, or blockers on assigned work${researchHint}
 
 Never invent client outreach or financial actions. Respect policy gates for client-facing and money work. Prefer short, actionable replies.`;
+};
 
 export const createTeammateAgent = (
   role: SeedTeammateRole,
   deps: TeammateAgentDeps,
-) =>
-  new Agent({
+) => {
+  const baseTools = createTeammateTools({
+    actionLogs: deps.actionLogs,
+    agentName: role,
+  });
+
+  const tools =
+    role === "research" && deps.research
+      ? {
+          ...baseTools,
+          ...createResearchTools({
+            actionLogs: deps.actionLogs,
+            ...deps.research,
+          }),
+        }
+      : baseTools;
+
+  return new Agent({
     id: role,
     name: displayNameForRole(role),
     instructions: buildTeammateInstructions(role),
     model: process.env.MASTRA_MODEL ?? "openai/gpt-4o-mini",
-    tools: createTeammateTools({
-      actionLogs: deps.actionLogs,
-      agentName: role,
-    }),
+    tools,
   });
+};
 
 export type TeammateAgent = ReturnType<typeof createTeammateAgent>;
 

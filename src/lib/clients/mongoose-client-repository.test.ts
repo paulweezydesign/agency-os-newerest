@@ -45,11 +45,17 @@ describe("createMongooseClientRepository", () => {
     expect(createMock).toHaveBeenCalledWith({
       tenantId: "tenant-default",
       name: "Acme Co",
+      contactEmail: undefined,
+      pipelineStage: "lead",
+      leadScore: 0,
     });
     expect(client).toEqual({
       id: "507f1f77bcf86cd799439011",
       tenantId: "tenant-default",
       name: "Acme Co",
+      contactEmail: undefined,
+      pipelineStage: "lead",
+      leadScore: 0,
       createdAt: "2026-08-11T00:00:00.000Z",
     });
   });

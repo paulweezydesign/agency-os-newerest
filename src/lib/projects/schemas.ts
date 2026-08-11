@@ -19,6 +19,7 @@ export const projectSchema = z.object({
   name: z.string().min(1),
   budget: z.number().nonnegative(),
   spend: z.number().nonnegative(),
+  depositTotal: z.number().nonnegative().default(0),
   timelineStart: z.string().min(1),
   timelineEnd: z.string().min(1),
   githubRepo: z.string().nullable().optional(),
