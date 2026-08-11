@@ -68,6 +68,7 @@ export const createTaskService = (
       title: parsed.title,
       description: parsed.description ?? "",
       status: "todo",
+      assignee: parsed.assignee ?? null,
     });
 
     await actionLogs.append({

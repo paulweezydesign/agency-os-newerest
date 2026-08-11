@@ -31,6 +31,14 @@ export const CreateTaskForm = ({ projectId }: CreateTaskFormProps) => {
           rows={2}
         />
       </label>
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        Assignee
+        <input
+          className="rounded-md border border-slate-300 px-3 py-2"
+          name="assignee"
+          placeholder="optional@agency.test"
+        />
+      </label>
       {state.error ? (
         <p className="text-sm text-red-700">{state.error}</p>
       ) : null}

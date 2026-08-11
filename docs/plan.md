@@ -93,15 +93,18 @@ Note: Tickets 02–04 shipped Client → Project → Task board with action audi
 
 ## Slice E — Linear + Monday sync
 
-**Status:** `todo`
+**Status:** `in_progress`
 
-- [ ] Outbound sync: AgencyOS task → Linear + Monday (create/update)
-- [ ] Inbound webhooks: status/assignee → Mongo
-- [ ] Scope/description edits from trackers ignored (or parked as comments)
-- [ ] Sync conflict log + operator visibility
-- [ ] Tests for mapping + conflict rules
+- [x] Outbound sync: AgencyOS task → Linear (create/update; Monday deferred)
+- [x] Inbound webhooks: Linear status/assignee → Mongo
+- [x] Scope/description edits from Linear rejected/parked with sync log
+- [x] Sync conflict log + operator visibility (dashboard + `/api/sync-logs`)
+- [x] Tests for mapping + conflict rules (Linear)
+- [ ] Monday.com mirror (ticket 08+)
 
 **Exit:** status/assignee round-trip; scope remains AgencyOS-owned.
+
+Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday remains open.
 
 ---
 
@@ -196,3 +199,4 @@ Note: Tickets 02–04 shipped Client → Project → Task board with action audi
 | 2026-08-11 | Ticket 01: Auth shell + tenant dashboard shipped (tests/lint/typecheck/build green) |
 | 2026-08-11 | Ticket 03: Project under Client (timeline + budget) shipped; 36 tests green |
 | 2026-08-11 | Ticket 04: Tasks + AgentActionLog audit; Slice B done; 43 tests green |
+| 2026-08-11 | Ticket 07: Linear tracker mirror (status/assignee + sync log); 59 tests green |
