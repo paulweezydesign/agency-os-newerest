@@ -158,13 +158,13 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 
 ## Slice I — Figma + Slack + Stripe
 
-**Status:** `todo`
+**Status:** `done`
 
-- [ ] Figma integration for design review
+- [x] Figma integration for design review
 - [x] Slack notifications for gates, sync failures, budget alerts (ticket 19)
-- [ ] Stripe Checkout deposits; invoice hooks as Phase 1 allows
-- [ ] Policy gates on money movements
-- [ ] Webhook verification + tests
+- [x] Stripe Checkout deposits; invoice hooks as Phase 1 allows
+- [x] Policy gates on money movements
+- [x] Webhook verification + tests
 
 **Exit:** Phase 1 “essential” human integrations complete atop Paul-first set.
 
@@ -172,14 +172,14 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 
 ## Slice J — Harden
 
-**Status:** `todo`
+**Status:** `done`
 
-- [ ] Unit/integration/smoke coverage for critical workflows
-- [ ] Retries/timeouts/circuit breakers audited on all external APIs
-- [ ] Observability: correlation IDs end-to-end; runbooks
-- [ ] `docs/architecture.md`, `docs/workflows.md`, `docs/runbooks.md` complete
-- [ ] Seed script + demo script
-- [ ] `lint` / `typecheck` / `test` / `build` all green
+- [x] Unit/integration/smoke coverage for critical workflows
+- [x] Retries/timeouts/circuit breakers audited on all external APIs
+- [x] Observability: correlation IDs end-to-end; runbooks
+- [x] `docs/architecture.md`, `docs/workflows.md`, and `docs/runbooks.md` complete
+- [x] Seed script + demo script
+- [x] `lint` / `typecheck` / `test` / `build` all green
 
 **Exit:** Definition of Done from build-prompt met for the locked spine.
 

@@ -5,6 +5,7 @@ import {
   parseFigmaFileKey,
   type FigmaClient,
 } from "@/lib/figma/figma-client";
+import { withRetry } from "@/lib/http/with-retry";
 import {
   ProjectNotFoundError,
   type ProjectService,
@@ -98,7 +99,16 @@ export const createDesignReviewService = (deps: {
 
       try {
         figmaFileKey = parseFigmaFileKey(figmaUrl);
-        const file = await deps.figma.getFile({ fileKey: figmaFileKey });
+        const file = await withRetry(
+          () => deps.figma!.getFile({ fileKey: figmaFileKey! }),
+          {
+            retries: 2,
+            timeoutMs: 5_000,
+            shouldRetry: (error) =>
+              error instanceof FigmaClientError &&
+              /unavailable|rate limit|timeout/i.test(error.message),
+          },
+        );
         figmaFileName = file.name;
         assetUrl ??= figmaUrl;
 
