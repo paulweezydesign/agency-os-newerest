@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 import type { Client } from "./schemas";
 
 export type ClientRepository = {
-  create: (input: { tenantId: string; name: string }) => Promise<Client>;
+  create: (input: {
+    tenantId: string;
+    name: string;
+    id?: string;
+  }) => Promise<Client>;
   listByTenant: (tenantId: string) => Promise<Client[]>;
   getByTenantAndId: (
     tenantId: string,
@@ -14,9 +18,9 @@ export const createInMemoryClientRepository = (): ClientRepository => {
   const clients: Client[] = [];
 
   return {
-    create: async ({ tenantId, name }) => {
+    create: async ({ tenantId, name, id }) => {
       const client: Client = {
-        id: randomUUID(),
+        id: id ?? randomUUID(),
         tenantId,
         name,
         createdAt: new Date().toISOString(),

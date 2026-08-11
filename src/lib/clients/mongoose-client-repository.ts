@@ -15,9 +15,11 @@ const toClient = (doc: {
 });
 
 export const createMongooseClientRepository = (): ClientRepository => ({
-  create: async ({ tenantId, name }) => {
+  create: async ({ tenantId, name, id }) => {
     const model = getClientModel();
-    const doc = await model.create({ tenantId, name });
+    const doc = await model.create(
+      id ? { _id: id, tenantId, name } : { tenantId, name },
+    );
     return toClient(doc);
   },
   listByTenant: async (tenantId) => {
