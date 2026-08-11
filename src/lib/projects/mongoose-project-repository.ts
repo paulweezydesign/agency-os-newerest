@@ -9,6 +9,7 @@ const toProject = (doc: {
   name: string;
   budget: number;
   spend?: number | null;
+  depositTotal?: number | null;
   timelineStart: string;
   timelineEnd: string;
   githubRepo?: string | null;
@@ -20,6 +21,7 @@ const toProject = (doc: {
   name: doc.name,
   budget: doc.budget,
   spend: doc.spend ?? 0,
+  depositTotal: doc.depositTotal ?? 0,
   timelineStart: doc.timelineStart,
   timelineEnd: doc.timelineEnd,
   githubRepo: doc.githubRepo ?? null,
@@ -29,7 +31,7 @@ const toProject = (doc: {
 export const createMongooseProjectRepository = (): ProjectRepository => ({
   create: async (input: ProjectCreateRecord) => {
     const model = getProjectModel();
-    const doc = await model.create({ ...input, spend: 0 });
+    const doc = await model.create({ ...input, spend: 0, depositTotal: 0 });
     return toProject(doc);
   },
   listByTenantAndClient: async (tenantId, clientId) => {
@@ -71,6 +73,18 @@ export const createMongooseProjectRepository = (): ProjectRepository => ({
 
     const doc = await model
       .findOneAndUpdate({ _id: id, tenantId }, { githubRepo }, { new: true })
+      .exec();
+    return doc ? toProject(doc) : null;
+  },
+  updateDepositTotalByTenantAndId: async (tenantId, id, depositTotal) => {
+    const model = getProjectModel();
+
+    if (!id.match(/^[a-f\d]{24}$/i)) {
+      return null;
+    }
+
+    const doc = await model
+      .findOneAndUpdate({ _id: id, tenantId }, { depositTotal }, { new: true })
       .exec();
     return doc ? toProject(doc) : null;
   },
