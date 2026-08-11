@@ -20,6 +20,10 @@ Tenant-scoped Client CRUD lives under `src/lib/clients` (Zod + service + mongoos
 
 Projects belong to a Client and are tenant-scoped under `src/lib/projects`. Create/list live at `/api/clients/[clientId]/projects`; get at `/api/projects/[projectId]`. Fields include `budget`, `timelineStart`, and `timelineEnd`. Dashboard: create/list on client detail; detail at `/dashboard/projects/[projectId]`.
 
+## Tasks + audit
+
+Tasks are the Mongo system of record under `src/lib/tasks` (`todo` / `in_progress` / `done`). Create/list at `/api/projects/[projectId]/tasks`; update at `/api/tasks/[taskId]`. Every create/update appends an `AgentActionLog` (`src/lib/agent-action-logs`) with `correlationId` (from `x-correlation-id` or generated). Dashboard task board lives on the project detail page.
+
 ## Next
 
-Tasks + audit logs, the Project Manager agent, tracker mirrors, and policy gates — see `docs/plan.md` and `.scratch/agencyos-v1/issues/`.
+Project Manager agent, tracker mirrors, and policy gates — see `docs/plan.md` and `.scratch/agencyos-v1/issues/`.
