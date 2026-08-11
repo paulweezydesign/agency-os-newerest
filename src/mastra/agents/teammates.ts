@@ -1,5 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import type { AgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
+import type { ClientPipelineService } from "@/lib/client-pipeline/client-pipeline-service";
 import {
   SEED_TEAMMATE_ROLES,
   isSeedTeammateRole,
@@ -22,6 +23,12 @@ export type SpawnedTeammateOptions = {
   specialization: string;
   justification: string;
 };
+
+const PIPELINE_ROLES: readonly SeedTeammateRole[] = [
+  "prospector",
+  "nurture",
+  "onboarding",
+];
 
 const displayNameForRole = (role: SeedTeammateRole): string => {
   switch (role) {

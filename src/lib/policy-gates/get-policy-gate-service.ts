@@ -1,7 +1,8 @@
 import { createMongooseAgentActionLogRepository } from "@/lib/agent-action-logs/mongoose-agent-action-log-repository";
 import { connectMongo } from "@/lib/db/mongodb";
+import { getResendClient } from "@/lib/email/get-resend-client";
 import {
-  createDemoEffectRunner,
+  createResendAwareEffectRunner,
   getSharedDemoEffectStore,
 } from "./demo-effects";
 import { createMongoosePolicyGateRepository } from "./mongoose-policy-gate-repository";
@@ -15,6 +16,9 @@ export const getPolicyGateService = async (): Promise<PolicyGateService> => {
   return createPolicyGateService(
     createMongoosePolicyGateRepository(),
     createMongooseAgentActionLogRepository(),
-    createDemoEffectRunner(getSharedDemoEffectStore()),
+    createResendAwareEffectRunner(
+      getSharedDemoEffectStore(),
+      getResendClient(),
+    ),
   );
 };

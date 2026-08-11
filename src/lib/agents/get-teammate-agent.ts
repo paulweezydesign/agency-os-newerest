@@ -9,6 +9,8 @@ import { isSeedTeammateRole, type SeedTeammateRole } from "./seed-roster";
 
 const cache = new Map<SeedTeammateRole, TeammateAgent>();
 
+const PIPELINE_ROLES = new Set(["prospector", "nurture", "onboarding"]);
+
 export const getTeammateAgent = async (
   name: string,
 ): Promise<TeammateAgent | null> => {
