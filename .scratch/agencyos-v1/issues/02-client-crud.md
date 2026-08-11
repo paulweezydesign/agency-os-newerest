@@ -4,10 +4,14 @@
 
 **Blocked by:** 01 — Auth shell + tenant dashboard
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Operator can create a Client and see it in the clients list
-- [ ] Operator can open Client detail
-- [ ] Unauthenticated or wrong-role access is rejected
-- [ ] Clients are tenant-scoped
-- [ ] Tests cover create/list/get and RBAC denial
+- [x] Operator can create a Client and see it in the clients list
+- [x] Operator can open Client detail
+- [x] Unauthenticated or wrong-role access is rejected
+- [x] Clients are tenant-scoped
+- [x] Tests cover create/list/get and RBAC denial
+
+## Comments
+
+- 2026-08-11: Client service + mongoose repo, `/api/clients` handlers with operator allow / unauth 401 / client-role 403, dashboard list/create/detail UI. Vitest 21 passing (was 9). `npm test`, `typecheck`, `lint` green.

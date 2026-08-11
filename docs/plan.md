@@ -50,15 +50,17 @@ Note: Ticket 01 shipped the auth shell. shadcn + Mastra remain for later tickets
 
 ## Slice B — Clients / Projects / Tasks + audit
 
-**Status:** `todo`
+**Status:** `in_progress`
 
-- [ ] Models: Client, Project, Task, Conversation, AgentActionLog
-- [ ] Zod contracts + API CRUD (RBAC)
-- [ ] Dashboard list/detail pages (thin UI)
+- [x] Models: Client (Project, Task, Conversation, AgentActionLog later)
+- [x] Zod contracts + Client API CRUD (RBAC); projects/tasks later
+- [x] Dashboard clients list/detail pages (thin UI)
 - [ ] Correlation IDs on mutations
-- [ ] Unit + API smoke tests
+- [x] Unit + API handler tests for Client create/list/get + RBAC denial
 
 **Exit:** operator can CRUD clients/projects/tasks; actions auditable.
+
+Note: Ticket 02 shipped Client create/list/get (tenant-scoped) with operator RBAC and thin dashboard UI.
 
 ---
 

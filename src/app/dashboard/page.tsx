@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { getSessionContext } from "@/lib/auth/session-context";
@@ -38,23 +39,30 @@ const DashboardPage = async () => {
             Dashboard
           </h1>
           <p className="mt-2 text-slate-600">
-            Empty operator shell. Clients, projects, and agents land in later
-            tickets.
+            Operator shell. Open Clients to create and manage client orgs.
           </p>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-            type="submit"
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/clients"
+            className="rounded-md bg-teal-800 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
           >
-            Sign out
-          </button>
-        </form>
+            Clients
+          </Link>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+          >
+            <button
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              type="submit"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-3">
