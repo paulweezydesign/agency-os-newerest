@@ -4,10 +4,10 @@
 
 **Blocked by:** 14 — Client portal: status + artifacts
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Operator can create a design review with an uploaded asset
-- [ ] Client can view, annotate, approve, or reject in the portal
-- [ ] Review state transitions are persisted and visible to both sides
-- [ ] Unauthorized roles cannot approve
-- [ ] Tests cover approve/reject paths
+- [x] Operator can create a design review with an uploaded asset
+- [x] Client can view, annotate, approve, or reject in the portal
+- [x] Review state transitions are persisted and visible to both sides
+- [x] Unauthorized roles cannot approve
+- [x] Tests cover approve/reject paths
