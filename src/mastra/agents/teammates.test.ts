@@ -27,6 +27,32 @@ describe("seed teammate agents", () => {
     }
   });
 
+  it("registers Exa and RAG tools on the research teammate when deps provided", async () => {
+    const actionLogs = createInMemoryAgentActionLogRepository();
+    const { createInMemoryExaClient } = await import("@/lib/exa/exa-client");
+    const { createHashEmbeddingClient } = await import(
+      "@/lib/rag/embeddings"
+    );
+    const { createInMemoryKnowledgeBase } = await import(
+      "@/lib/rag/knowledge-base"
+    );
+
+    const agent = createTeammateAgent("research", {
+      actionLogs,
+      research: {
+        exa: createInMemoryExaClient(),
+        knowledgeBase: createInMemoryKnowledgeBase(
+          createHashEmbeddingClient(),
+        ),
+      },
+    });
+    const tools = await agent.listTools();
+
+    expect(Object.keys(tools).sort()).toEqual(
+      ["exaSearch", "ingestDocument", "queryKnowledge", "reportStatus"].sort(),
+    );
+  });
+
   it("creates a single seed teammate by role name", async () => {
     const actionLogs = createInMemoryAgentActionLogRepository();
     const agent = createTeammateAgent("frontend", { actionLogs });
