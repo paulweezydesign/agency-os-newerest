@@ -1,4 +1,5 @@
 import type { ClientService } from "@/lib/clients/client-service";
+import type { SlackNotifier } from "@/lib/slack/notify";
 import type { BudgetAlertRepository } from "./budget-alert-repository";
 import { evaluateBudgetGuardrails } from "./budget-guardrails";
 import type { ProjectRepository } from "./project-repository";
@@ -54,6 +55,7 @@ export const createProjectService = (
   repository: ProjectRepository,
   clients: Pick<ClientService, "get">,
   budgetAlerts: BudgetAlertRepository,
+  notifier?: Pick<SlackNotifier, "notifyBudgetAlert">,
 ): ProjectService => ({
   create: async ({ tenantId, clientId, ...input }) => {
     const parsed = createProjectInputSchema.parse(input);
@@ -114,6 +116,16 @@ export const createProjectService = (
     )
       .filter((alert): alert is BudgetAlert => alert !== null)
       .sort((a, b) => a.threshold - b.threshold);
+
+    await Promise.all(
+      createdAlerts.map((alert) =>
+        notifier?.notifyBudgetAlert({
+          tenantId,
+          alert,
+          correlationId: `budget-${alert.id}`,
+        }),
+      ),
+    );
 
     return {
       project: updated,
