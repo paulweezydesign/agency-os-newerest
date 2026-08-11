@@ -4,10 +4,10 @@
 
 **Blocked by:** 05 — Project Manager agent chat, 09 — Policy gate queue
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `createProjectBrief` / `generateSOW` / `buildMVPScaffold` produce persisted Project artifacts
-- [ ] Artifacts appear on Project detail UI
-- [ ] SOW send to Client goes through the policy gate
-- [ ] Workflow/tool failures are logged with actionable errors
-- [ ] Tests cover happy path persistence and gated send
+- [x] `createProjectBrief` / `generateSOW` / `buildMVPScaffold` produce persisted Project artifacts
+- [x] Artifacts appear on Project detail UI
+- [x] SOW send to Client goes through the policy gate
+- [x] Workflow/tool failures are logged with actionable errors
+- [x] Tests cover happy path persistence and gated send
