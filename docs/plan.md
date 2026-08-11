@@ -52,15 +52,15 @@ Note: Ticket 01 auth shell + Slice A leftovers (Mastra stub + shadcn Button). `@
 
 **Status:** `in_progress`
 
-- [x] Models: Client (Project, Task, Conversation, AgentActionLog later)
-- [x] Zod contracts + Client API CRUD (RBAC); projects/tasks later
-- [x] Dashboard clients list/detail pages (thin UI)
+- [x] Models: Client, Project (Task, Conversation, AgentActionLog later)
+- [x] Zod contracts + Client/Project API create/list/get (RBAC); tasks later
+- [x] Dashboard clients list/detail + projects under client/detail pages
 - [ ] Correlation IDs on mutations
-- [x] Unit + API handler tests for Client create/list/get + RBAC denial
+- [x] Unit + API handler tests for Client/Project create/list/get + RBAC denial
 
 **Exit:** operator can CRUD clients/projects/tasks; actions auditable.
 
-Note: Ticket 02 shipped Client create/list/get (tenant-scoped) with operator RBAC and thin dashboard UI.
+Note: Ticket 02 shipped Client create/list/get. Ticket 03 shipped Project under Client with timeline + budget.
 
 ---
 
@@ -194,3 +194,4 @@ Note: Ticket 02 shipped Client create/list/get (tenant-scoped) with operator RBA
 | --- | --- |
 | 2026-08-11 | Plan created from grill-with-docs; decisions in CONTEXT.md + ADR-0001…0005 |
 | 2026-08-11 | Ticket 01: Auth shell + tenant dashboard shipped (tests/lint/typecheck/build green) |
+| 2026-08-11 | Ticket 03: Project under Client (timeline + budget) shipped; 36 tests green |

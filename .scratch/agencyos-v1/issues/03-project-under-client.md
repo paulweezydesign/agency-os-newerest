@@ -4,10 +4,14 @@
 
 **Blocked by:** 02 — Client CRUD
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Operator can create a Project on a Client
-- [ ] Project list and detail show timeline and budget fields
-- [ ] Project is tenant-scoped and linked to its Client
-- [ ] Wrong-role access is rejected
-- [ ] Tests cover create/list/get under a Client
+- [x] Operator can create a Project on a Client
+- [x] Project list and detail show timeline and budget fields
+- [x] Project is tenant-scoped and linked to its Client
+- [x] Wrong-role access is rejected
+- [x] Tests cover create/list/get under a Client
+
+## Comments
+
+- 2026-08-11: Implemented Project service/API/mongoose + dashboard under Client detail. 36 tests green; typecheck/lint pass.
