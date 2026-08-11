@@ -32,11 +32,11 @@ Living task board. Update status as slices ship. Decisions live in `CONTEXT.md` 
 
 ## Slice A — Foundation
 
-**Status:** `in_progress`
+**Status:** `done`
 
 - [x] Next.js 15 App Router + TypeScript + Tailwind v4
-- [ ] shadcn/ui init (deferred — not required for auth shell)
-- [ ] Mastra (`@mastra/core`, `@mastra/rag`) wired in `src/mastra`
+- [x] shadcn/ui init (`components.json` + Button; Tailwind v4)
+- [x] Mastra (`@mastra/core`) stub wired in `src/mastra` (empty agents/tools/workflows; `@mastra/rag` deferred)
 - [x] MongoDB singleton + Mongoose; `tenantId` on session/data path
 - [x] Auth.js v5 skeleton: `admin`, `agent-operator`, `client`
 - [x] `.env.example`, README stub, `docs/architecture.md` stub
@@ -44,21 +44,23 @@ Living task board. Update status as slices ship. Decisions live in `CONTEXT.md` 
 
 **Exit:** app boots, auth session works, Mongo connects, CI scripts exist.
 
-Note: Ticket 01 shipped the auth shell. shadcn + Mastra remain for later tickets; Slice A is otherwise complete enough to unblock B.
+Note: Ticket 01 auth shell + Slice A leftovers (Mastra stub + shadcn Button). `@mastra/rag` deferred until Slice G.
 
 ---
 
 ## Slice B — Clients / Projects / Tasks + audit
 
-**Status:** `todo`
+**Status:** `in_progress`
 
-- [ ] Models: Client, Project, Task, Conversation, AgentActionLog
-- [ ] Zod contracts + API CRUD (RBAC)
-- [ ] Dashboard list/detail pages (thin UI)
+- [x] Models: Client (Project, Task, Conversation, AgentActionLog later)
+- [x] Zod contracts + Client API CRUD (RBAC); projects/tasks later
+- [x] Dashboard clients list/detail pages (thin UI)
 - [ ] Correlation IDs on mutations
-- [ ] Unit + API smoke tests
+- [x] Unit + API handler tests for Client create/list/get + RBAC denial
 
 **Exit:** operator can CRUD clients/projects/tasks; actions auditable.
+
+Note: Ticket 02 shipped Client create/list/get (tenant-scoped) with operator RBAC and thin dashboard UI.
 
 ---
 

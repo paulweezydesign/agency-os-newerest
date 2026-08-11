@@ -12,6 +12,10 @@ Auth.js v5 with a Credentials provider and expandable roles (`admin`, `agent-ope
 
 MongoDB is the primary store (ADR-0001). `connectMongo` is a Next-safe singleton. Documents carry `tenantId`; v1 runs one tenant in practice.
 
+## Clients
+
+Tenant-scoped Client CRUD lives under `src/lib/clients` (Zod + service + mongoose repository). HTTP handlers in `/api/clients` use `resolveOperatorApiAccess` (operator allow; unauthenticated 401; non-operator 403). Thin dashboard UI at `/dashboard/clients`.
+
 ## Next
 
-Tickets after the auth shell add Clients/Projects/Tasks, the Project Manager agent, tracker mirrors, and policy gates — see `docs/plan.md` and `.scratch/agencyos-v1/issues/`.
+Projects/Tasks, the Project Manager agent, tracker mirrors, and policy gates — see `docs/plan.md` and `.scratch/agencyos-v1/issues/`.
