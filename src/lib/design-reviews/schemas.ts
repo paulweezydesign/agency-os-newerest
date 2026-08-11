@@ -7,11 +7,17 @@ export const designReviewStatusSchema = z.enum([
   "rejected",
 ]);
 
-export const createDesignReviewInputSchema = z.object({
-  title: z.string().trim().min(1),
-  assetUrl: z.string().trim().url(),
-  notes: z.string().trim().optional(),
-});
+export const createDesignReviewInputSchema = z
+  .object({
+    title: z.string().trim().min(1),
+    assetUrl: z.string().trim().url().optional(),
+    figmaUrl: z.string().trim().url().optional(),
+    notes: z.string().trim().optional(),
+  })
+  .refine((value) => Boolean(value.assetUrl || value.figmaUrl), {
+    message: "assetUrl or figmaUrl is required",
+    path: ["assetUrl"],
+  });
 
 export const annotateDesignReviewInputSchema = z.object({
   annotation: z.string().trim().min(1),
@@ -28,6 +34,9 @@ export const designReviewSchema = z.object({
   projectId: z.string().min(1),
   title: z.string().min(1),
   assetUrl: z.string().url(),
+  figmaUrl: z.string().url().optional(),
+  figmaFileKey: z.string().optional(),
+  figmaFileName: z.string().optional(),
   notes: z.string().optional(),
   annotation: z.string().optional(),
   status: designReviewStatusSchema,

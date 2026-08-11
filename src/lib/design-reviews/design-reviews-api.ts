@@ -8,6 +8,7 @@ import type { ProjectService } from "@/lib/projects/project-service";
 import {
   DesignReviewNotFoundError,
   DesignReviewStateError,
+  FigmaAttachError,
   type DesignReviewService,
 } from "./design-review-service";
 import {
@@ -70,6 +71,9 @@ export const handleCreateDesignReview = async (input: {
     }
     if (error instanceof ProjectNotFoundError) {
       return { status: 404, body: { error: "Project not found" } };
+    }
+    if (error instanceof FigmaAttachError) {
+      return { status: 400, body: { error: error.message } };
     }
     throw error;
   }

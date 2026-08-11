@@ -63,3 +63,7 @@ _Avoid_: Unlimited spawn in v1
 **Deposit**:
 A client payment recorded via Stripe Checkout to start or continue work; e-sign vendors are out of v1.
 _Avoid_: DocuSign, Adobe Sign (deferred)
+
+**Figma deep-link**:
+A design review attachment that stores a Figma file/design URL and resolved file metadata for the Client approve/reject loop.
+_Avoid_: Treating Figma as the design-review system of record

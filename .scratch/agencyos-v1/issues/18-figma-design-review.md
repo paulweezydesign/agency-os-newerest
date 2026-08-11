@@ -4,10 +4,10 @@
 
 **Blocked by:** 15 — Design review (upload path)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Design review can store a Figma link/attachment
-- [ ] Portal/agency UI surfaces the Figma context during review
-- [ ] Approve/reject still works with Figma-backed reviews
-- [ ] Failures talking to Figma are actionable and logged
-- [ ] Tests cover attach + review path (mocked Figma where needed)
+- [x] Design review can store a Figma link/attachment
+- [x] Portal/agency UI surfaces the Figma context during review
+- [x] Approve/reject still works with Figma-backed reviews
+- [x] Failures talking to Figma are actionable and logged
+- [x] Tests cover attach + review path (mocked Figma where needed)
