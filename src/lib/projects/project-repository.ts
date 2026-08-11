@@ -20,6 +20,11 @@ export type ProjectRepository = {
     tenantId: string,
     id: string,
   ) => Promise<Project | null>;
+  updateSpendByTenantAndId: (
+    tenantId: string,
+    id: string,
+    spend: number,
+  ) => Promise<Project | null>;
 };
 
 export const createInMemoryProjectRepository = (): ProjectRepository => {
@@ -30,6 +35,7 @@ export const createInMemoryProjectRepository = (): ProjectRepository => {
       const project: Project = {
         id: randomUUID(),
         ...input,
+        spend: 0,
         createdAt: new Date().toISOString(),
       };
       projects.push(project);
@@ -44,5 +50,17 @@ export const createInMemoryProjectRepository = (): ProjectRepository => {
       projects.find(
         (project) => project.tenantId === tenantId && project.id === id,
       ) ?? null,
+    updateSpendByTenantAndId: async (tenantId, id, spend) => {
+      const project = projects.find(
+        (entry) => entry.tenantId === tenantId && entry.id === id,
+      );
+
+      if (!project) {
+        return null;
+      }
+
+      project.spend = spend;
+      return project;
+    },
   };
 };

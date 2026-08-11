@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
+import { createInMemoryBudgetAlertRepository } from "@/lib/projects/budget-alert-repository";
 import { createInMemoryProjectRepository } from "@/lib/projects/project-repository";
 import { createProjectService } from "@/lib/projects/project-service";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
@@ -12,6 +13,7 @@ const createStack = async () => {
   const projects = createProjectService(
     createInMemoryProjectRepository(),
     clients,
+    createInMemoryBudgetAlertRepository(),
   );
   const actionLogs = createInMemoryAgentActionLogRepository();
   const tasks = createTaskService(
