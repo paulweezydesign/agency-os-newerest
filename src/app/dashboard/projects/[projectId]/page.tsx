@@ -6,6 +6,10 @@ import { getSessionContext } from "@/lib/auth/session-context";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
 import { handleGetProject } from "@/lib/projects/projects-api";
 import { getProjectService } from "@/lib/projects/get-project-service";
+import { handleListTasksForProject } from "@/lib/tasks/tasks-api";
+import { getTaskService } from "@/lib/tasks/get-task-service";
+import { CreateTaskForm } from "./create-task-form";
+import { TaskBoard } from "./task-board";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +27,11 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
     redirect(access.to);
   }
 
-  const service = await getProjectService();
+  const projectService = await getProjectService();
+  const taskService = await getTaskService();
   const result = await handleGetProject({
     session: authSession,
-    service,
+    service: projectService,
     projectId,
   });
 
@@ -38,6 +43,12 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
     redirect("/signin");
   }
 
+  const listed = await handleListTasksForProject({
+    session: authSession,
+    service: taskService,
+    projectId,
+  });
+  const tasks = listed.status === 200 ? listed.body : [];
   const project = result.body;
 
   return (
@@ -50,7 +61,9 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
           <h1 className="mt-2 text-3xl font-semibold text-slate-900">
             {project.name}
           </h1>
-          <p className="mt-2 text-slate-600">Project detail</p>
+          <p className="mt-2 text-slate-600">
+            Project board for tenant {context!.tenantId}.
+          </p>
         </div>
         <Link
           href={`/dashboard/clients/${project.clientId}`}
@@ -69,40 +82,24 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">
-            Client
-          </p>
-          <p className="mt-1 font-medium text-slate-900">{project.clientId}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Timeline start
+            Timeline
           </p>
           <p className="mt-1 font-medium text-slate-900">
-            {project.timelineStart}
+            {project.timelineStart} → {project.timelineEnd}
           </p>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Timeline end
-          </p>
-          <p className="mt-1 font-medium text-slate-900">
-            {project.timelineEnd}
-          </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">New task</h2>
+        <div className="mt-4">
+          <CreateTaskForm projectId={projectId} />
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Tenant
-          </p>
-          <p className="mt-1 font-medium text-slate-900">{project.tenantId}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Created
-          </p>
-          <p className="mt-1 font-medium text-slate-900">
-            {new Date(project.createdAt).toLocaleString()}
-          </p>
-        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-medium text-slate-900">Task board</h2>
+        <TaskBoard projectId={projectId} tasks={tasks} />
       </section>
     </main>
   );

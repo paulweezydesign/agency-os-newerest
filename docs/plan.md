@@ -50,17 +50,17 @@ Note: Ticket 01 auth shell + Slice A leftovers (Mastra stub + shadcn Button). `@
 
 ## Slice B — Clients / Projects / Tasks + audit
 
-**Status:** `in_progress`
+**Status:** `done`
 
-- [x] Models: Client, Project (Task, Conversation, AgentActionLog later)
-- [x] Zod contracts + Client/Project API create/list/get (RBAC); tasks later
-- [x] Dashboard clients list/detail + projects under client/detail pages
-- [ ] Correlation IDs on mutations
-- [x] Unit + API handler tests for Client/Project create/list/get + RBAC denial
+- [x] Models: Client, Project, Task, AgentActionLog (Conversation later)
+- [x] Zod contracts + Client/Project/Task APIs (RBAC)
+- [x] Dashboard clients/projects + task board UI
+- [x] Correlation IDs on Task mutations (`x-correlation-id` → AgentActionLog)
+- [x] Unit + API handler tests for Client/Project/Task + RBAC denial + audit writes
 
 **Exit:** operator can CRUD clients/projects/tasks; actions auditable.
 
-Note: Ticket 02 shipped Client create/list/get. Ticket 03 shipped Project under Client with timeline + budget.
+Note: Tickets 02–04 shipped Client → Project → Task board with action audit.
 
 ---
 
@@ -195,3 +195,4 @@ Note: Ticket 02 shipped Client create/list/get. Ticket 03 shipped Project under 
 | 2026-08-11 | Plan created from grill-with-docs; decisions in CONTEXT.md + ADR-0001…0005 |
 | 2026-08-11 | Ticket 01: Auth shell + tenant dashboard shipped (tests/lint/typecheck/build green) |
 | 2026-08-11 | Ticket 03: Project under Client (timeline + budget) shipped; 36 tests green |
+| 2026-08-11 | Ticket 04: Tasks + AgentActionLog audit; Slice B done; 43 tests green |
