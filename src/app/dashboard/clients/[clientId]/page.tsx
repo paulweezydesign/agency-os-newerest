@@ -6,6 +6,9 @@ import { getSessionContext } from "@/lib/auth/session-context";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
 import { handleGetClient } from "@/lib/clients/clients-api";
 import { getClientService } from "@/lib/clients/get-client-service";
+import { handleListProjectsForClient } from "@/lib/projects/projects-api";
+import { getProjectService } from "@/lib/projects/get-project-service";
+import { CreateProjectForm } from "./create-project-form";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +26,11 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
     redirect(access.to);
   }
 
-  const service = await getClientService();
+  const clientService = await getClientService();
+  const projectService = await getProjectService();
   const result = await handleGetClient({
     session: authSession,
-    service,
+    service: clientService,
     clientId,
   });
 
@@ -38,6 +42,12 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
     redirect("/signin");
   }
 
+  const listed = await handleListProjectsForClient({
+    session: authSession,
+    service: projectService,
+    clientId,
+  });
+  const projects = listed.status === 200 ? listed.body : [];
   const client = result.body;
 
   return (
@@ -50,7 +60,9 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
           <h1 className="mt-2 text-3xl font-semibold text-slate-900">
             {client.name}
           </h1>
-          <p className="mt-2 text-slate-600">Client detail</p>
+          <p className="mt-2 text-slate-600">
+            Client detail and projects for tenant {context!.tenantId}.
+          </p>
         </div>
         <Link
           href="/dashboard/clients"
@@ -79,6 +91,37 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
             {new Date(client.createdAt).toLocaleString()}
           </p>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">New project</h2>
+        <div className="mt-4">
+          <CreateProjectForm clientId={clientId} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">Projects</h2>
+        {projects.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">No projects yet.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {projects.map((project) => (
+              <li key={project.id} className="py-3">
+                <Link
+                  href={`/dashboard/projects/${project.id}`}
+                  className="font-medium text-teal-800 hover:underline"
+                >
+                  {project.name}
+                </Link>
+                <p className="text-xs text-slate-500">
+                  Budget {project.budget} · {project.timelineStart} →{" "}
+                  {project.timelineEnd}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </main>
   );
