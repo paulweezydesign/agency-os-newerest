@@ -1,15 +1,18 @@
 import { Agent } from "@mastra/core/agent";
 import type { AgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
+import type { ClientPipelineService } from "@/lib/client-pipeline/client-pipeline-service";
 import {
   SEED_TEAMMATE_ROLES,
   isSeedTeammateRole,
   teammateSafetyRules,
   type SeedTeammateRole,
 } from "@/lib/agents/seed-roster";
+import { createRunClientPipelineTool } from "../tools/pipeline-tools";
 import { createTeammateTools } from "../tools/teammate-tools";
 
 export type TeammateAgentDeps = {
   actionLogs: AgentActionLogRepository;
+  pipeline?: ClientPipelineService;
 };
 
 export type SpawnedTeammateOptions = {
@@ -17,6 +20,12 @@ export type SpawnedTeammateOptions = {
   specialization: string;
   justification: string;
 };
+
+const PIPELINE_ROLES: readonly SeedTeammateRole[] = [
+  "prospector",
+  "nurture",
+  "onboarding",
+];
 
 const displayNameForRole = (role: SeedTeammateRole): string => {
   switch (role) {
@@ -45,31 +54,52 @@ const displayNameForRole = (role: SeedTeammateRole): string => {
   }
 };
 
-const buildTeammateInstructions = (role: SeedTeammateRole): string =>
-  `You are the ${displayNameForRole(role)} teammate agent for AgencyOS.
+const buildTeammateInstructions = (role: SeedTeammateRole): string => {
+  const pipelineHint = PIPELINE_ROLES.includes(role)
+    ? `
+- runClientPipeline: advance a Client through prospect → qualify → nurture/onboard (emails are policy-gated)`
+    : "";
+
+  return `You are the ${displayNameForRole(role)} teammate agent for AgencyOS.
 
 You execute assigned work under Project Manager delegation only.
 Safety rules: ${teammateSafetyRules(role)}
 
 Operate through tools only:
-- reportStatus: report progress, completion, or blockers on assigned work
+- reportStatus: report progress, completion, or blockers on assigned work${pipelineHint}
 
 Never invent client outreach or financial actions. Respect policy gates for client-facing and money work. Prefer short, actionable replies.`;
+};
 
 export const createTeammateAgent = (
   role: SeedTeammateRole,
   deps: TeammateAgentDeps,
-) =>
-  new Agent({
+) => {
+  const baseTools = createTeammateTools({
+    actionLogs: deps.actionLogs,
+    agentName: role,
+  });
+
+  const tools =
+    deps.pipeline && PIPELINE_ROLES.includes(role)
+      ? {
+          ...baseTools,
+          runClientPipeline: createRunClientPipelineTool({
+            pipeline: deps.pipeline,
+            actionLogs: deps.actionLogs,
+            agentName: role,
+          }),
+        }
+      : baseTools;
+
+  return new Agent({
     id: role,
     name: displayNameForRole(role),
     instructions: buildTeammateInstructions(role),
     model: process.env.MASTRA_MODEL ?? "openai/gpt-4o-mini",
-    tools: createTeammateTools({
-      actionLogs: deps.actionLogs,
-      agentName: role,
-    }),
+    tools,
   });
+};
 
 export type TeammateAgent = ReturnType<typeof createTeammateAgent>;
 

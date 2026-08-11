@@ -9,6 +9,7 @@ import { getClientService } from "@/lib/clients/get-client-service";
 import { handleListProjectsForClient } from "@/lib/projects/projects-api";
 import { getProjectService } from "@/lib/projects/get-project-service";
 import { CreateProjectForm } from "./create-project-form";
+import { RunPipelineForm } from "./run-pipeline-form";
 
 export const dynamic = "force-dynamic";
 
@@ -79,17 +80,33 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">
-            Tenant
+            Pipeline
           </p>
-          <p className="mt-1 font-medium text-slate-900">{client.tenantId}</p>
+          <p className="mt-1 font-medium text-slate-900">
+            {client.pipelineStage} · score {client.leadScore}
+          </p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">
-            Created
+            Contact
           </p>
           <p className="mt-1 font-medium text-slate-900">
-            {new Date(client.createdAt).toLocaleString()}
+            {client.contactEmail ?? "—"}
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-900">Client pipeline</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Prospect → qualify → nurture/onboard with lead-score branching.
+          Client email is policy-gated before Resend.
+        </p>
+        <div className="mt-4">
+          <RunPipelineForm
+            clientId={clientId}
+            defaultEmail={client.contactEmail ?? ""}
+          />
         </div>
       </section>
 
