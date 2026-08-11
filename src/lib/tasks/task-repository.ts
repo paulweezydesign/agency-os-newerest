@@ -7,12 +7,16 @@ export type TaskCreateRecord = {
   title: string;
   description: string;
   status: TaskStatus;
+  assignee: string | null;
+  linearIssueId?: string | null;
 };
 
 export type TaskUpdateRecord = {
   title?: string;
   description?: string;
   status?: TaskStatus;
+  assignee?: string | null;
+  linearIssueId?: string | null;
 };
 
 export type TaskRepository = {
@@ -22,6 +26,7 @@ export type TaskRepository = {
     projectId: string,
   ) => Promise<Task[]>;
   getByTenantAndId: (tenantId: string, id: string) => Promise<Task | null>;
+  getByLinearIssueId: (linearIssueId: string) => Promise<Task | null>;
   updateByTenantAndId: (
     tenantId: string,
     id: string,
@@ -37,7 +42,13 @@ export const createInMemoryTaskRepository = (): TaskRepository => {
       const now = new Date().toISOString();
       const task: Task = {
         id: randomUUID(),
-        ...input,
+        tenantId: input.tenantId,
+        projectId: input.projectId,
+        title: input.title,
+        description: input.description,
+        status: input.status,
+        assignee: input.assignee,
+        linearIssueId: input.linearIssueId ?? null,
         createdAt: now,
         updatedAt: now,
       };
@@ -51,6 +62,8 @@ export const createInMemoryTaskRepository = (): TaskRepository => {
     getByTenantAndId: async (tenantId, id) =>
       tasks.find((task) => task.tenantId === tenantId && task.id === id) ??
       null,
+    getByLinearIssueId: async (linearIssueId) =>
+      tasks.find((task) => task.linearIssueId === linearIssueId) ?? null,
     updateByTenantAndId: async (tenantId, id, patch) => {
       const index = tasks.findIndex(
         (task) => task.tenantId === tenantId && task.id === id,

@@ -3,6 +3,7 @@ import type { AuthSession } from "@/lib/auth/session-context";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
+import { createInMemoryBudgetAlertRepository } from "@/lib/projects/budget-alert-repository";
 import { createInMemoryProjectRepository } from "@/lib/projects/project-repository";
 import { createProjectService } from "@/lib/projects/project-service";
 import { createInMemoryTaskRepository } from "./task-repository";
@@ -34,6 +35,7 @@ const createDeps = async () => {
   const projects = createProjectService(
     createInMemoryProjectRepository(),
     clients,
+    createInMemoryBudgetAlertRepository(),
   );
   const actionLogs = createInMemoryAgentActionLogRepository();
   const tasks = createTaskService(

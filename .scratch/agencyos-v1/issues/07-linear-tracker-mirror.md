@@ -4,10 +4,10 @@
 
 **Blocked by:** 04 — Tasks + action audit
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Creating/updating a Task pushes status/assignee to Linear
-- [ ] Linear status/assignee webhooks update the Task in Mongo
-- [ ] Scope/description remain AgencyOS-owned under conflict
-- [ ] Sync outcomes are visible to operators
-- [ ] Tests cover mapping and conflict rules
+- [x] Creating/updating a Task pushes status/assignee to Linear
+- [x] Linear status/assignee webhooks update the Task in Mongo
+- [x] Scope/description remain AgencyOS-owned under conflict
+- [x] Sync outcomes are visible to operators
+- [x] Tests cover mapping and conflict rules

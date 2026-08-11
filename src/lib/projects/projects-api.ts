@@ -3,9 +3,16 @@ import { resolveOperatorApiAccess } from "@/lib/auth/operator-api-access";
 import type { AuthSession } from "@/lib/auth/session-context";
 import {
   ClientNotFoundError,
+  ProjectNotFoundError,
   type ProjectService,
+  type RecordSpendResult,
 } from "./project-service";
-import { createProjectInputSchema, type Project } from "./schemas";
+import {
+  createProjectInputSchema,
+  recordProjectSpendInputSchema,
+  type BudgetAlert,
+  type Project,
+} from "./schemas";
 
 type ErrorBody = { error: string };
 
@@ -119,4 +126,63 @@ export const handleGetProject = async ({
   }
 
   return { status: 200, body: project };
+};
+
+export const handleRecordProjectSpend = async ({
+  session,
+  service,
+  projectId,
+  body,
+}: HandlerDeps & {
+  projectId: string;
+  body: unknown;
+}): Promise<ApiResult<RecordSpendResult>> => {
+  const access = requireOperator(session);
+  if (!access.ok) {
+    return access.result;
+  }
+
+  try {
+    const parsed = recordProjectSpendInputSchema.parse(body);
+    const result = await service.recordSpend({
+      tenantId: access.context.tenantId,
+      projectId,
+      ...parsed,
+    });
+
+    return { status: 200, body: result };
+  } catch (error) {
+    if (error instanceof ProjectNotFoundError) {
+      return { status: 404, body: { error: "Project not found" } };
+    }
+
+    if (error instanceof ZodError) {
+      return { status: 400, body: { error: "Invalid request" } };
+    }
+
+    throw error;
+  }
+};
+
+export const handleListBudgetAlerts = async ({
+  session,
+  service,
+  projectId,
+}: HandlerDeps & { projectId: string }): Promise<ApiResult<BudgetAlert[]>> => {
+  const access = requireOperator(session);
+  if (!access.ok) {
+    return access.result;
+  }
+
+  const project = await service.get(access.context.tenantId, projectId);
+
+  if (!project) {
+    return { status: 404, body: { error: "Not found" } };
+  }
+
+  const alerts = await service.listBudgetAlerts(
+    access.context.tenantId,
+    projectId,
+  );
+  return { status: 200, body: alerts };
 };

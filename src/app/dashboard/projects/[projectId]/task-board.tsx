@@ -40,6 +40,9 @@ export const TaskBoard = ({ projectId, tasks }: TaskBoardProps) => (
                       {task.description}
                     </p>
                   ) : null}
+                  <p className="mt-1 text-xs text-slate-500">
+                    Assignee: {task.assignee ?? "Unassigned"}
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {columns
                       .filter((item) => item.status !== task.status)
