@@ -4,10 +4,10 @@
 
 **Blocked by:** 14 — Client portal: status + artifacts
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Change Request can be created with scope/timeline/budget impact fields
-- [ ] Approval path exists for agency and Client as appropriate
-- [ ] UAT checklist can be completed through to sign-off
-- [ ] No DocuSign/Adobe Sign dependency
-- [ ] Tests cover CR create/approve and UAT completion
+- [x] Change Request can be created with scope/timeline/budget impact fields
+- [x] Approval path exists for agency and Client as appropriate
+- [x] UAT checklist can be completed through to sign-off
+- [x] No DocuSign/Adobe Sign dependency
+- [x] Tests cover CR create/approve and UAT completion
