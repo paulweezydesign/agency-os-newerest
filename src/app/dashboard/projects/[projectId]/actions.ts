@@ -5,6 +5,12 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
 import {
+  handleCreateArtifact,
+  handleSendSow,
+} from "@/lib/project-artifacts/artifacts-api";
+import { getArtifactService } from "@/lib/project-artifacts/get-artifact-service";
+import type { ArtifactKind } from "@/lib/project-artifacts/schemas";
+import {
   handleBindGithubRepo,
   handleRecordProjectSpend,
 } from "@/lib/projects/projects-api";
@@ -24,6 +30,10 @@ export type SpendActionState = {
 };
 
 export type GithubBindActionState = {
+  error?: string;
+};
+
+export type ArtifactActionState = {
   error?: string;
 };
 
@@ -136,4 +146,67 @@ export const bindGithubRepoAction = async (
         ? result.body.error
         : "Unable to bind GitHub repo",
   };
+};
+
+const parseArtifactKind = (value: FormDataEntryValue | null): ArtifactKind | null => {
+  switch (value) {
+    case "brief":
+    case "sow":
+    case "mvp_scaffold":
+      return value;
+    default:
+      return null;
+  }
+};
+
+export const createArtifactAction = async (
+  projectId: string,
+  _prev: ArtifactActionState,
+  formData: FormData,
+): Promise<ArtifactActionState> => {
+  const kind = parseArtifactKind(formData.get("kind"));
+  if (!kind) {
+    return { error: "Invalid artifact kind" };
+  }
+
+  const session = toAuthSession(await auth());
+  const service = await getArtifactService();
+  const result = await handleCreateArtifact({
+    session,
+    service,
+    projectId,
+    kind,
+    body: {
+      title: String(formData.get("title") ?? ""),
+      body: String(formData.get("body") ?? ""),
+    },
+    headers: new Headers({ "x-correlation-id": randomUUID() }),
+  });
+
+  if (result.status === 201) {
+    revalidatePath(`/dashboard/projects/${projectId}`);
+    return {};
+  }
+
+  return {
+    error:
+      "error" in result.body ? result.body.error : "Unable to create artifact",
+  };
+};
+
+export const sendSowAction = async (
+  projectId: string,
+  artifactId: string,
+): Promise<void> => {
+  const session = toAuthSession(await auth());
+  const service = await getArtifactService();
+  await handleSendSow({
+    session,
+    service,
+    projectId,
+    body: { artifactId },
+    headers: new Headers({ "x-correlation-id": randomUUID() }),
+  });
+  revalidatePath(`/dashboard/projects/${projectId}`);
+  revalidatePath("/dashboard/policy-gates");
 };
