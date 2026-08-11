@@ -23,7 +23,7 @@ export const taskSchema = z.object({
   description: z.string(),
   status: taskStatusSchema,
   assignee: z.string().nullable(),
-  linearIssueId: z.string().nullable(),
+  mondayItemId: z.string().nullable(),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 });

@@ -59,7 +59,7 @@ describe("createTaskService", () => {
       description: "Low-fidelity layout",
       status: "todo",
       assignee: "alice@agency.test",
-      linearIssueId: null,
+      mondayItemId: null,
     });
 
     const logs = await actionLogs.listByCorrelationId(

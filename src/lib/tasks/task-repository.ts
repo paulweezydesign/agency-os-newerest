@@ -8,7 +8,7 @@ export type TaskCreateRecord = {
   description: string;
   status: TaskStatus;
   assignee: string | null;
-  linearIssueId?: string | null;
+  mondayItemId?: string | null;
 };
 
 export type TaskUpdateRecord = {
@@ -16,7 +16,7 @@ export type TaskUpdateRecord = {
   description?: string;
   status?: TaskStatus;
   assignee?: string | null;
-  linearIssueId?: string | null;
+  mondayItemId?: string | null;
 };
 
 export type TaskRepository = {
@@ -26,7 +26,7 @@ export type TaskRepository = {
     projectId: string,
   ) => Promise<Task[]>;
   getByTenantAndId: (tenantId: string, id: string) => Promise<Task | null>;
-  getByLinearIssueId: (linearIssueId: string) => Promise<Task | null>;
+  getByMondayItemId: (mondayItemId: string) => Promise<Task | null>;
   updateByTenantAndId: (
     tenantId: string,
     id: string,
@@ -48,7 +48,7 @@ export const createInMemoryTaskRepository = (): TaskRepository => {
         description: input.description,
         status: input.status,
         assignee: input.assignee,
-        linearIssueId: input.linearIssueId ?? null,
+        mondayItemId: input.mondayItemId ?? null,
         createdAt: now,
         updatedAt: now,
       };
@@ -62,8 +62,8 @@ export const createInMemoryTaskRepository = (): TaskRepository => {
     getByTenantAndId: async (tenantId, id) =>
       tasks.find((task) => task.tenantId === tenantId && task.id === id) ??
       null,
-    getByLinearIssueId: async (linearIssueId) =>
-      tasks.find((task) => task.linearIssueId === linearIssueId) ?? null,
+    getByMondayItemId: async (mondayItemId) =>
+      tasks.find((task) => task.mondayItemId === mondayItemId) ?? null,
     updateByTenantAndId: async (tenantId, id, patch) => {
       const index = tasks.findIndex(
         (task) => task.tenantId === tenantId && task.id === id,

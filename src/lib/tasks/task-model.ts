@@ -13,7 +13,7 @@ const taskSchema = new Schema(
       default: "todo",
     },
     assignee: { type: String, default: null },
-    linearIssueId: { type: String, default: null, index: true },
+    mondayItemId: { type: String, default: null, index: true },
   },
   {
     timestamps: { createdAt: true, updatedAt: true },
@@ -22,7 +22,7 @@ const taskSchema = new Schema(
 
 taskSchema.index({ tenantId: 1, projectId: 1 });
 taskSchema.index({ tenantId: 1, _id: 1 });
-taskSchema.index({ linearIssueId: 1 }, { sparse: true });
+taskSchema.index({ mondayItemId: 1 }, { sparse: true });
 
 export type TaskDocument = InferSchemaType<typeof taskSchema> & {
   _id: mongoose.Types.ObjectId;
