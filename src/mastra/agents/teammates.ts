@@ -7,12 +7,15 @@ import {
   teammateSafetyRules,
   type SeedTeammateRole,
 } from "@/lib/agents/seed-roster";
-import { createRunClientPipelineTool } from "../tools/pipeline-tools";
+import {
+  createResearchTools,
+  type ResearchToolDeps,
+} from "../tools/search-tools";
 import { createTeammateTools } from "../tools/teammate-tools";
 
 export type TeammateAgentDeps = {
   actionLogs: AgentActionLogRepository;
-  pipeline?: ClientPipelineService;
+  research?: Omit<ResearchToolDeps, "actionLogs">;
 };
 
 export type SpawnedTeammateOptions = {
@@ -55,10 +58,13 @@ const displayNameForRole = (role: SeedTeammateRole): string => {
 };
 
 const buildTeammateInstructions = (role: SeedTeammateRole): string => {
-  const pipelineHint = PIPELINE_ROLES.includes(role)
-    ? `
-- runClientPipeline: advance a Client through prospect → qualify → nurture/onboard (emails are policy-gated)`
-    : "";
+  const researchHint =
+    role === "research"
+      ? `
+- exaSearch: search the web via Exa
+- ingestDocument: store knowledge for later RAG queries
+- queryKnowledge: answer with source attribution from ingested docs`
+      : "";
 
   return `You are the ${displayNameForRole(role)} teammate agent for AgencyOS.
 
@@ -66,7 +72,7 @@ You execute assigned work under Project Manager delegation only.
 Safety rules: ${teammateSafetyRules(role)}
 
 Operate through tools only:
-- reportStatus: report progress, completion, or blockers on assigned work${pipelineHint}
+- reportStatus: report progress, completion, or blockers on assigned work${researchHint}
 
 Never invent client outreach or financial actions. Respect policy gates for client-facing and money work. Prefer short, actionable replies.`;
 };
@@ -81,13 +87,12 @@ export const createTeammateAgent = (
   });
 
   const tools =
-    deps.pipeline && PIPELINE_ROLES.includes(role)
+    role === "research" && deps.research
       ? {
           ...baseTools,
-          runClientPipeline: createRunClientPipelineTool({
-            pipeline: deps.pipeline,
+          ...createResearchTools({
             actionLogs: deps.actionLogs,
-            agentName: role,
+            ...deps.research,
           }),
         }
       : baseTools;

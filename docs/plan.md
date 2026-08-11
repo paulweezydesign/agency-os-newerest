@@ -131,10 +131,10 @@ Note: Ticket 07 shipped Linear-only mirror with mocked Linear client; Monday rem
 **Status:** `in_progress`
 
 - [x] Tools: `createProjectBrief`, `generateSOW`, `buildMVPScaffold` (ticket 11)
-- [x] Workflows: `client-pipeline` (lead score branching) (ticket 12); stubs for agency-delivery/lifecycle/sprint/code-review deferred
-- [ ] Exa search tools; Resend email tools (client sends gated — Resend wire-up in ticket 12; Exa in 13)
+- [ ] Workflows: `agency-delivery`, `client-pipeline` (lead score branching), plus stubs for lifecycle/sprint/code-review as needed
+- [x] Exa search tools (ticket 13); Resend email tools remain with policy-gate queue (ticket 09/12)
 - [x] Persist brief/SOW/scaffold on Project; show on project detail (ticket 11; SOW send policy-gated)
-- [ ] RAG ingest/query baseline for Research (`text-embedding-3-small`, source attribution)
+- [x] RAG ingest/query baseline for Research (hash embedding stand-in for `text-embedding-3-small`, source attribution) (ticket 13)
 - [ ] Integration tests for delivery + pipeline happy paths
 
 **Exit:** demo path lead → qualify → nurture → onboard → brief → SOW → scaffold with logs.

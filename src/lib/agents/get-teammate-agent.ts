@@ -1,5 +1,6 @@
 import { createMongooseAgentActionLogRepository } from "@/lib/agent-action-logs/mongoose-agent-action-log-repository";
-import { getClientPipelineService } from "@/lib/client-pipeline/get-client-pipeline-service";
+import { getExaClient } from "@/lib/exa/get-exa-client";
+import { getKnowledgeBase } from "@/lib/rag/get-knowledge-base";
 import {
   createTeammateAgent,
   type TeammateAgent,
@@ -23,13 +24,15 @@ export const getTeammateAgent = async (
   }
 
   const actionLogs = createMongooseAgentActionLogRepository();
-  const pipeline = PIPELINE_ROLES.has(name)
-    ? await getClientPipelineService()
-    : undefined;
-
   const agent = createTeammateAgent(name, {
     actionLogs,
-    pipeline,
+    research:
+      name === "research"
+        ? {
+            exa: getExaClient(),
+            knowledgeBase: getKnowledgeBase(),
+          }
+        : undefined,
   });
   cache.set(name, agent);
   return agent;
