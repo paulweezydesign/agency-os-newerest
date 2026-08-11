@@ -140,7 +140,7 @@ Note: Tickets 02–04 shipped Client → Project → Task board with action audi
 
 - [ ] `(portal)` routes: status, approvals, artifacts (client role)
 - [ ] Design review (upload/annotate path; Figma deep-link later in I)
-- [ ] Budget guardrails (80/100/120% alerts) on Project
+- [x] Budget guardrails (80/100/120% alerts) on Project
 - [ ] Change requests + UAT checklist (Phase 1 core)
 - [ ] Expand permission map toward PRD roles (without Auth0 yet)
 - [ ] Tests for portal RBAC + approval state machine
@@ -196,3 +196,4 @@ Note: Tickets 02–04 shipped Client → Project → Task board with action audi
 | 2026-08-11 | Ticket 01: Auth shell + tenant dashboard shipped (tests/lint/typecheck/build green) |
 | 2026-08-11 | Ticket 03: Project under Client (timeline + budget) shipped; 36 tests green |
 | 2026-08-11 | Ticket 04: Tasks + AgentActionLog audit; Slice B done; 43 tests green |
+| 2026-08-11 | Ticket 16: Budget guardrails (spend + 80/100/120 alerts); tests green |

@@ -4,9 +4,9 @@
 
 **Blocked by:** 03 — Project under Client
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Project tracks budget and recorded spend/burn
-- [ ] Crossing 80/100/120% creates visible operator alerts
-- [ ] Alerts are durable and associated with the Project
-- [ ] Tests cover each threshold transition
+- [x] Project tracks budget and recorded spend/burn
+- [x] Crossing 80/100/120% creates visible operator alerts
+- [x] Alerts are durable and associated with the Project
+- [x] Tests cover each threshold transition

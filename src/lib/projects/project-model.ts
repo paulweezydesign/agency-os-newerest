@@ -6,6 +6,7 @@ const projectSchema = new Schema(
     clientId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     budget: { type: Number, required: true, min: 0 },
+    spend: { type: Number, required: true, min: 0, default: 0 },
     timelineStart: { type: String, required: true },
     timelineEnd: { type: String, required: true },
   },

@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
+import { handleRecordProjectSpend } from "@/lib/projects/projects-api";
+import { getProjectService } from "@/lib/projects/get-project-service";
 import {
   handleCreateTask,
   handleUpdateTask,
@@ -11,6 +13,10 @@ import {
 import { getTaskService } from "@/lib/tasks/get-task-service";
 
 export type TaskActionState = {
+  error?: string;
+};
+
+export type SpendActionState = {
   error?: string;
 };
 
@@ -65,4 +71,31 @@ export const updateTaskStatusAction = async (
   });
 
   revalidatePath(`/dashboard/projects/${projectId}`);
+};
+
+export const recordProjectSpendAction = async (
+  projectId: string,
+  _prev: SpendActionState,
+  formData: FormData,
+): Promise<SpendActionState> => {
+  const session = toAuthSession(await auth());
+  const service = await getProjectService();
+  const result = await handleRecordProjectSpend({
+    session,
+    service,
+    projectId,
+    body: {
+      amount: formData.get("amount"),
+    },
+  });
+
+  if (result.status === 200) {
+    revalidatePath(`/dashboard/projects/${projectId}`);
+    return {};
+  }
+
+  return {
+    error:
+      "error" in result.body ? result.body.error : "Unable to record spend",
+  };
 };

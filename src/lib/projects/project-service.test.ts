@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
+import { createInMemoryBudgetAlertRepository } from "./budget-alert-repository";
 import { createInMemoryProjectRepository } from "./project-repository";
 import { createProjectService } from "./project-service";
 
@@ -9,6 +10,7 @@ const createServices = () => {
   const projects = createProjectService(
     createInMemoryProjectRepository(),
     clients,
+    createInMemoryBudgetAlertRepository(),
   );
   return { clients, projects };
 };
