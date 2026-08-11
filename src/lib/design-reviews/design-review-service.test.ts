@@ -123,15 +123,14 @@ describe("design review service", () => {
   });
 
   it("logs actionable errors when Figma attach fails", async () => {
-    const { reviews, project, figma, actionLogs } = await setup();
-    figma.failNext("Figma rate limited");
+    const { reviews, project, actionLogs } = await setup();
 
     await expect(
       reviews.create({
         tenantId: "t1",
         projectId: project.id,
         title: "Broken Figma",
-        figmaUrl: "https://www.figma.com/design/AbCdEf123/Broken",
+        figmaUrl: "https://www.figma.com/design/MissingKey99/Broken",
         correlationId: "corr-figma-fail",
       }),
     ).rejects.toBeInstanceOf(FigmaAttachError);
