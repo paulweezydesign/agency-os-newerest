@@ -1,6 +1,8 @@
 import { createMongooseAgentActionLogRepository } from "@/lib/agent-action-logs/mongoose-agent-action-log-repository";
 import { connectMongo } from "@/lib/db/mongodb";
 import { getResendClient } from "@/lib/email/get-resend-client";
+import { createStripeAwareEffectRunner } from "@/lib/stripe/deposit-service";
+import { getStripeClient } from "@/lib/stripe/get-stripe-client";
 import {
   createResendAwareEffectRunner,
   getSharedDemoEffectStore,
@@ -13,12 +15,15 @@ import {
 
 export const getPolicyGateService = async (): Promise<PolicyGateService> => {
   await connectMongo();
+  const store = getSharedDemoEffectStore();
+  const base = createResendAwareEffectRunner(store, getResendClient());
+
   return createPolicyGateService(
     createMongoosePolicyGateRepository(),
     createMongooseAgentActionLogRepository(),
-    createResendAwareEffectRunner(
-      getSharedDemoEffectStore(),
-      getResendClient(),
-    ),
+    createStripeAwareEffectRunner({
+      base,
+      stripe: getStripeClient(),
+    }),
   );
 };
