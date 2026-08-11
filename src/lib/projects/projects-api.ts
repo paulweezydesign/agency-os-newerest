@@ -8,6 +8,7 @@ import {
   type RecordSpendResult,
 } from "./project-service";
 import {
+  bindGithubRepoInputSchema,
   createProjectInputSchema,
   recordProjectSpendInputSchema,
   type BudgetAlert,
@@ -185,4 +186,40 @@ export const handleListBudgetAlerts = async ({
     projectId,
   );
   return { status: 200, body: alerts };
+};
+
+export const handleBindGithubRepo = async ({
+  session,
+  service,
+  projectId,
+  body,
+}: HandlerDeps & {
+  projectId: string;
+  body: unknown;
+}): Promise<ApiResult<Project>> => {
+  const access = requireOperator(session);
+  if (!access.ok) {
+    return access.result;
+  }
+
+  try {
+    const parsed = bindGithubRepoInputSchema.parse(body);
+    const project = await service.bindGithubRepo({
+      tenantId: access.context.tenantId,
+      projectId,
+      ...parsed,
+    });
+
+    return { status: 200, body: project };
+  } catch (error) {
+    if (error instanceof ProjectNotFoundError) {
+      return { status: 404, body: { error: "Project not found" } };
+    }
+
+    if (error instanceof ZodError) {
+      return { status: 400, body: { error: "Invalid request" } };
+    }
+
+    throw error;
+  }
 };

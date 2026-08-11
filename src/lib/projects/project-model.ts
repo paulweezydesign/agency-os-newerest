@@ -9,6 +9,7 @@ const projectSchema = new Schema(
     spend: { type: Number, required: true, min: 0, default: 0 },
     timelineStart: { type: String, required: true },
     timelineEnd: { type: String, required: true },
+    githubRepo: { type: String, required: false, default: null },
   },
   {
     timestamps: { createdAt: true, updatedAt: true },

@@ -11,6 +11,7 @@ const toProject = (doc: {
   spend?: number | null;
   timelineStart: string;
   timelineEnd: string;
+  githubRepo?: string | null;
   createdAt: Date;
 }): Project => ({
   id: doc._id.toString(),
@@ -21,6 +22,7 @@ const toProject = (doc: {
   spend: doc.spend ?? 0,
   timelineStart: doc.timelineStart,
   timelineEnd: doc.timelineEnd,
+  githubRepo: doc.githubRepo ?? null,
   createdAt: doc.createdAt.toISOString(),
 });
 
@@ -57,6 +59,18 @@ export const createMongooseProjectRepository = (): ProjectRepository => ({
 
     const doc = await model
       .findOneAndUpdate({ _id: id, tenantId }, { spend }, { new: true })
+      .exec();
+    return doc ? toProject(doc) : null;
+  },
+  updateGithubRepoByTenantAndId: async (tenantId, id, githubRepo) => {
+    const model = getProjectModel();
+
+    if (!id.match(/^[a-f\d]{24}$/i)) {
+      return null;
+    }
+
+    const doc = await model
+      .findOneAndUpdate({ _id: id, tenantId }, { githubRepo }, { new: true })
       .exec();
     return doc ? toProject(doc) : null;
   },

@@ -67,6 +67,7 @@ describe("createMongooseProjectRepository", () => {
       spend: 0,
       timelineStart: "2026-09-01",
       timelineEnd: "2026-12-01",
+      githubRepo: null,
       createdAt: "2026-08-11T00:00:00.000Z",
     });
   });

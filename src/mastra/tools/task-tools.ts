@@ -16,10 +16,13 @@ export const createTaskToolInputSchema = z.object({
   description: z.string().trim().optional(),
 });
 
-export type ProjectManagerToolDeps = {
+export type ProjectManagerTaskToolDeps = {
   taskService: TaskService;
   actionLogs: AgentActionLogRepository;
 };
+
+/** Alias kept for existing call sites. */
+export type ProjectManagerToolDeps = ProjectManagerTaskToolDeps;
 
 type ToolRequestFields = {
   tenantId: string;
@@ -47,7 +50,7 @@ const readRequestFields = (
 export const createListTasksTool = ({
   taskService,
   actionLogs,
-}: ProjectManagerToolDeps) =>
+}: ProjectManagerTaskToolDeps) =>
   createTool({
     id: "listTasks",
     description:
@@ -75,7 +78,7 @@ export const createListTasksTool = ({
 export const createCreateTaskTool = ({
   taskService,
   actionLogs,
-}: ProjectManagerToolDeps) =>
+}: ProjectManagerTaskToolDeps) =>
   createTool({
     id: "createTask",
     description:
@@ -125,7 +128,9 @@ export const createCreateTaskTool = ({
     },
   });
 
-export const createProjectManagerTaskTools = (deps: ProjectManagerToolDeps) => ({
+export const createProjectManagerTaskTools = (
+  deps: ProjectManagerTaskToolDeps,
+) => ({
   listTasks: createListTasksTool(deps),
   createTask: createCreateTaskTool(deps),
 });

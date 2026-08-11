@@ -3,8 +3,10 @@ import type { BudgetAlertRepository } from "./budget-alert-repository";
 import { evaluateBudgetGuardrails } from "./budget-guardrails";
 import type { ProjectRepository } from "./project-repository";
 import {
+  bindGithubRepoInputSchema,
   createProjectInputSchema,
   recordProjectSpendInputSchema,
+  type BindGithubRepoInput,
   type BudgetAlert,
   type CreateProjectInput,
   type Project,
@@ -43,6 +45,9 @@ export type ProjectService = {
     tenantId: string,
     projectId: string,
   ) => Promise<BudgetAlert[]>;
+  bindGithubRepo: (
+    input: BindGithubRepoInput & { tenantId: string; projectId: string },
+  ) => Promise<Project>;
 };
 
 export const createProjectService = (
@@ -117,4 +122,24 @@ export const createProjectService = (
   },
   listBudgetAlerts: (tenantId, projectId) =>
     budgetAlerts.listByTenantAndProject(tenantId, projectId),
+  bindGithubRepo: async ({ tenantId, projectId, ...input }) => {
+    const parsed = bindGithubRepoInputSchema.parse(input);
+    const project = await repository.getByTenantAndId(tenantId, projectId);
+
+    if (!project) {
+      throw new ProjectNotFoundError();
+    }
+
+    const updated = await repository.updateGithubRepoByTenantAndId(
+      tenantId,
+      projectId,
+      parsed.githubRepo,
+    );
+
+    if (!updated) {
+      throw new ProjectNotFoundError();
+    }
+
+    return updated;
+  },
 });
