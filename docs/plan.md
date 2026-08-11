@@ -66,15 +66,17 @@ Note: Tickets 02–04 shipped Client → Project → Task board with action audi
 
 ## Slice C — Project Manager agent + tool bus
 
-**Status:** `todo`
+**Status:** `done`
 
-- [ ] `project-manager` agent: delegate-only instructions + output contracts
-- [ ] Mongo tools (scoped CRUD) with Zod + retries/timeouts
-- [ ] Every tool call → AgentActionLog
-- [ ] Streaming chat route `api/agents/[name]/chat`
-- [ ] AgentChat UI (operator)
+- [x] `project-manager` agent: orchestrate-only instructions + list/create Task tools
+- [x] Mongo tools (listTasks/createTask) with Zod schemas
+- [x] Every tool call → AgentActionLog
+- [x] Streaming chat route `api/agents/[name]/chat`
+- [x] AgentChat UI (operator) at `/dashboard/agents/project-manager`
 
 **Exit:** PM can read/write domain state via tools; no silent tool use.
+
+Note: Ticket 05 — list/create Task tools + streaming chat; full CRUD/retries deferred.
 
 ---
 

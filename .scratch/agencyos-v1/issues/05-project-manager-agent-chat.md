@@ -4,10 +4,10 @@
 
 **Blocked by:** 04 — Tasks + action audit
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Streaming chat UI talks to the Project Manager agent
-- [ ] Agent can list and create Tasks only through tools
-- [ ] Agent instructions enforce orchestrate-only (no deliverable execution)
-- [ ] Every tool call appears in AgentActionLog
-- [ ] Tests cover tool schema validation and logged tool invocation
+- [x] Streaming chat UI talks to the Project Manager agent
+- [x] Agent can list and create Tasks only through tools
+- [x] Agent instructions enforce orchestrate-only (no deliverable execution)
+- [x] Every tool call appears in AgentActionLog
+- [x] Tests cover tool schema validation and logged tool invocation

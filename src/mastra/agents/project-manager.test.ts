@@ -6,22 +6,20 @@ import { createInMemoryProjectRepository } from "@/lib/projects/project-reposito
 import { createProjectService } from "@/lib/projects/project-service";
 import { createInMemoryTaskRepository } from "@/lib/tasks/task-repository";
 import { createTaskService } from "@/lib/tasks/task-service";
-import { createMastraApp, mastra } from "./index";
+import {
+  PROJECT_MANAGER_INSTRUCTIONS,
+  createProjectManagerAgent,
+} from "./project-manager";
 
-describe("createMastraApp", () => {
-  it("exports a Mastra stub with empty registries by default", () => {
-    const app = createMastraApp();
-
-    expect(app).toBeDefined();
-    expect(app.listAgents()).toEqual({});
-    expect(app.listTools()).toEqual({});
-    expect(app.listWorkflows()).toEqual({});
-
-    expect(mastra).toBeDefined();
-    expect(mastra.listAgents()).toEqual({});
+describe("project-manager agent", () => {
+  it("instructions enforce orchestrate-only (no deliverable execution)", () => {
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/orchestrat/i);
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/does not complete deliverable work/i);
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/listTasks|createTask/);
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/tools only|through tools/i);
   });
 
-  it("registers the project-manager agent and task tools when deps are provided", () => {
+  it("exposes listTasks and createTask tools only", async () => {
     const clients = createClientService(createInMemoryClientRepository());
     const projects = createProjectService(
       createInMemoryProjectRepository(),
@@ -34,15 +32,12 @@ describe("createMastraApp", () => {
       actionLogs,
     );
 
-    const app = createMastraApp({
-      projectManagerDeps: { taskService, actionLogs },
-    });
+    const agent = createProjectManagerAgent({ taskService, actionLogs });
+    const tools = await agent.listTools();
+    const instructions = await agent.getInstructions();
 
-    const agents = app.listAgents();
-    expect(Object.keys(agents)).toEqual(["projectManager"]);
-    expect(agents.projectManager.id).toBe("project-manager");
-
-    const tools = app.listTools() ?? {};
+    expect(agent.id).toBe("project-manager");
+    expect(instructions).toContain("does not complete deliverable work");
     expect(Object.keys(tools).sort()).toEqual(["createTask", "listTasks"]);
   });
 });
