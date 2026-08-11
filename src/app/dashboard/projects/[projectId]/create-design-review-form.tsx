@@ -10,7 +10,10 @@ export const CreateDesignReviewForm = ({
 }) => {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [assetUrl, setAssetUrl] = useState("https://cdn.example.com/design.png");
+  const [assetUrl, setAssetUrl] = useState("");
+  const [figmaUrl, setFigmaUrl] = useState(
+    "https://www.figma.com/file/AbCdEf123/Homepage",
+  );
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent) => {
@@ -21,7 +24,11 @@ export const CreateDesignReviewForm = ({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, assetUrl }),
+        body: JSON.stringify({
+          title,
+          ...(assetUrl ? { assetUrl } : {}),
+          ...(figmaUrl ? { figmaUrl } : {}),
+        }),
       },
     );
     const body = (await response.json()) as { error?: string };
@@ -44,12 +51,21 @@ export const CreateDesignReviewForm = ({
         />
       </label>
       <label className="text-sm text-slate-700">
-        Asset URL
+        Asset URL (optional if Figma link is set)
         <input
           className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
           value={assetUrl}
           onChange={(e) => setAssetUrl(e.target.value)}
-          required
+          placeholder="https://cdn.example.com/design.png"
+        />
+      </label>
+      <label className="text-sm text-slate-700">
+        Figma URL (optional deep-link)
+        <input
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+          value={figmaUrl}
+          onChange={(e) => setFigmaUrl(e.target.value)}
+          placeholder="https://www.figma.com/file/... or /design/..."
         />
       </label>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
@@ -57,7 +73,7 @@ export const CreateDesignReviewForm = ({
         type="submit"
         className="rounded-md bg-teal-800 px-4 py-2 text-sm text-white hover:bg-teal-700"
       >
-        Upload design review
+        Create design review
       </button>
     </form>
   );

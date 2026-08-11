@@ -208,8 +208,8 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-medium text-slate-900">Design reviews</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Upload a design asset URL for Client annotate/approve in the portal
-          (Figma deep-link comes later).
+          Attach an asset URL and/or Figma deep-link for Client annotate/approve
+          in the portal.
         </p>
         <div className="mt-4">
           <CreateDesignReviewForm projectId={projectId} />
@@ -234,6 +234,19 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
                 >
                   {review.assetUrl}
                 </a>
+                {review.figmaUrl ? (
+                  <p className="mt-1">
+                    Figma:{" "}
+                    <a
+                      href={review.figmaUrl}
+                      className="text-teal-800 hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {review.figmaFileName ?? review.figmaFileKey ?? "Open file"}
+                    </a>
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>

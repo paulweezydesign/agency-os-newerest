@@ -1,3 +1,10 @@
+import { randomUUID } from "node:crypto";
+import type { AgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
+import {
+  FigmaClientError,
+  parseFigmaFileKey,
+  type FigmaClient,
+} from "@/lib/figma/figma-client";
 import {
   ProjectNotFoundError,
   type ProjectService,
@@ -24,13 +31,22 @@ export class DesignReviewStateError extends Error {
   }
 }
 
+export class FigmaAttachError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FigmaAttachError";
+  }
+}
+
 export type DesignReviewService = {
   create: (input: {
     tenantId: string;
     projectId: string;
     title: string;
-    assetUrl: string;
+    assetUrl?: string;
+    figmaUrl?: string;
     notes?: string;
+    correlationId?: string;
   }) => Promise<DesignReview>;
   listByProject: (
     tenantId: string,
@@ -53,19 +69,84 @@ export type DesignReviewService = {
 export const createDesignReviewService = (deps: {
   reviews: DesignReviewRepository;
   projects: Pick<ProjectService, "get">;
+  figma?: FigmaClient;
+  actionLogs?: AgentActionLogRepository;
 }): DesignReviewService => ({
-  create: async ({ tenantId, projectId, ...input }) => {
+  create: async ({
+    tenantId,
+    projectId,
+    correlationId = randomUUID(),
+    ...input
+  }) => {
     const parsed = createDesignReviewInputSchema.parse(input);
     const project = await deps.projects.get(tenantId, projectId);
     if (!project) {
       throw new ProjectNotFoundError();
     }
 
+    let figmaUrl = parsed.figmaUrl;
+    let figmaFileKey: string | undefined;
+    let figmaFileName: string | undefined;
+    let assetUrl = parsed.assetUrl;
+
+    if (figmaUrl) {
+      if (!deps.figma) {
+        throw new FigmaAttachError(
+          "Figma client is not configured for design reviews",
+        );
+      }
+
+      try {
+        figmaFileKey = parseFigmaFileKey(figmaUrl);
+        const file = await deps.figma.getFile({ fileKey: figmaFileKey });
+        figmaFileName = file.name;
+        assetUrl ??= figmaUrl;
+
+        await deps.actionLogs?.append({
+          tenantId,
+          projectId,
+          agentName: "design-review",
+          toolName: "figma.getFile",
+          input: { figmaUrl, fileKey: figmaFileKey },
+          output: file,
+          status: "success",
+          correlationId,
+        });
+      } catch (error) {
+        const message =
+          error instanceof FigmaClientError || error instanceof Error
+            ? error.message
+            : "Unknown Figma error";
+
+        await deps.actionLogs?.append({
+          tenantId,
+          projectId,
+          agentName: "design-review",
+          toolName: "figma.getFile",
+          input: { figmaUrl },
+          output: { error: message },
+          status: "error",
+          correlationId,
+        });
+
+        throw new FigmaAttachError(
+          `Failed to attach Figma file: ${message}. Fix the link or token and retry.`,
+        );
+      }
+    }
+
+    if (!assetUrl) {
+      throw new FigmaAttachError("assetUrl or figmaUrl is required");
+    }
+
     return deps.reviews.create({
       tenantId,
       projectId,
       title: parsed.title,
-      assetUrl: parsed.assetUrl,
+      assetUrl,
+      figmaUrl,
+      figmaFileKey,
+      figmaFileName,
       notes: parsed.notes,
     });
   },

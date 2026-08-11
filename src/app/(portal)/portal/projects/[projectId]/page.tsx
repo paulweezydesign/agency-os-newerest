@@ -104,6 +104,19 @@ const PortalProjectPage = async ({ params }: PortalProjectPageProps) => {
                 >
                   Open asset
                 </a>
+                {review.figmaUrl ? (
+                  <p className="mt-1 text-sm">
+                    Figma:{" "}
+                    <a
+                      href={review.figmaUrl}
+                      className="text-teal-800 hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {review.figmaFileName ?? "Open in Figma"}
+                    </a>
+                  </p>
+                ) : null}
                 {review.annotation ? (
                   <p className="mt-1 text-sm text-slate-600">
                     Annotation: {review.annotation}

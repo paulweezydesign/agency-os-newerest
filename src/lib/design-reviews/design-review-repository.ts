@@ -7,6 +7,9 @@ export type DesignReviewRepository = {
     projectId: string;
     title: string;
     assetUrl: string;
+    figmaUrl?: string;
+    figmaFileKey?: string;
+    figmaFileName?: string;
     notes?: string;
   }) => Promise<DesignReview>;
   listByProject: (
