@@ -4,10 +4,10 @@
 
 **Blocked by:** 05 — Project Manager agent chat, 09 — Policy gate queue
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Seed roster agents beyond Project Manager are registered and chatable
-- [ ] Each teammate agent has scoped tools and safety rules
-- [ ] Spawn tool enforces cap of 10 dynamic agents per Project
-- [ ] Spawn justification is recorded in AgentActionLog
-- [ ] Tests cover roster registration and spawn cap enforcement
+- [x] Seed roster agents beyond Project Manager are registered and chatable
+- [x] Each teammate agent has scoped tools and safety rules
+- [x] Spawn tool enforces cap of 10 dynamic agents per Project
+- [x] Spawn justification is recorded in AgentActionLog
+- [x] Tests cover roster registration and spawn cap enforcement

@@ -49,6 +49,12 @@ const DashboardPage = async () => {
         </div>
         <div className="flex gap-2">
           <Link
+            href="/dashboard/agents"
+            className="inline-flex h-8 items-center rounded-lg border border-teal-800 px-2.5 text-sm font-medium text-teal-900 hover:bg-teal-50"
+          >
+            Agents
+          </Link>
+          <Link
             href="/dashboard/agents/project-manager"
             className="inline-flex h-8 items-center rounded-lg border border-teal-800 px-2.5 text-sm font-medium text-teal-900 hover:bg-teal-50"
           >
