@@ -45,6 +45,7 @@ describe("createTaskService", () => {
       projectId: project.id,
       title: "Draft homepage wireframe",
       description: "Low-fidelity layout",
+      assignee: "alice@agency.test",
       correlationId: "corr-create-1",
       actorName: "agent-operator",
     });
@@ -55,6 +56,8 @@ describe("createTaskService", () => {
       title: "Draft homepage wireframe",
       description: "Low-fidelity layout",
       status: "todo",
+      assignee: "alice@agency.test",
+      linearIssueId: null,
     });
 
     const logs = await actionLogs.listByCorrelationId(
@@ -89,7 +92,7 @@ describe("createTaskService", () => {
     expect(listed[0]?.title).toBe("Task one");
   });
 
-  it("updates task status and writes an action log", async () => {
+  it("updates task status and assignee and writes an action log", async () => {
     const { tasks, actionLogs, project } = await createStack();
     const created = await tasks.create({
       tenantId: "tenant-a",
@@ -99,10 +102,13 @@ describe("createTaskService", () => {
       actorName: "agent-operator",
     });
 
+    expect(created.assignee).toBeNull();
+
     const updated = await tasks.update({
       tenantId: "tenant-a",
       taskId: created.id,
       status: "in_progress",
+      assignee: "bob@agency.test",
       correlationId: "corr-update",
       actorName: "agent-operator",
     });
@@ -110,6 +116,7 @@ describe("createTaskService", () => {
     expect(updated).toMatchObject({
       id: created.id,
       status: "in_progress",
+      assignee: "bob@agency.test",
     });
 
     const logs = await actionLogs.listByCorrelationId(
