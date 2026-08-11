@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AuthSession } from "@/lib/auth/session-context";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
+import { createInMemoryBudgetAlertRepository } from "./budget-alert-repository";
 import { createInMemoryProjectRepository } from "./project-repository";
 import { createProjectService } from "./project-service";
 import {
@@ -31,6 +32,7 @@ const createDeps = async () => {
   const projects = createProjectService(
     createInMemoryProjectRepository(),
     clients,
+    createInMemoryBudgetAlertRepository(),
   );
   const client = await clients.create({
     tenantId: "tenant-default",

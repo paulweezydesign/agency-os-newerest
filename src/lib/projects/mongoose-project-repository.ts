@@ -8,6 +8,7 @@ const toProject = (doc: {
   clientId: string;
   name: string;
   budget: number;
+  spend?: number | null;
   timelineStart: string;
   timelineEnd: string;
   createdAt: Date;
@@ -17,6 +18,7 @@ const toProject = (doc: {
   clientId: doc.clientId,
   name: doc.name,
   budget: doc.budget,
+  spend: doc.spend ?? 0,
   timelineStart: doc.timelineStart,
   timelineEnd: doc.timelineEnd,
   createdAt: doc.createdAt.toISOString(),
@@ -25,7 +27,7 @@ const toProject = (doc: {
 export const createMongooseProjectRepository = (): ProjectRepository => ({
   create: async (input: ProjectCreateRecord) => {
     const model = getProjectModel();
-    const doc = await model.create(input);
+    const doc = await model.create({ ...input, spend: 0 });
     return toProject(doc);
   },
   listByTenantAndClient: async (tenantId, clientId) => {
@@ -44,6 +46,18 @@ export const createMongooseProjectRepository = (): ProjectRepository => ({
     }
 
     const doc = await model.findOne({ _id: id, tenantId }).exec();
+    return doc ? toProject(doc) : null;
+  },
+  updateSpendByTenantAndId: async (tenantId, id, spend) => {
+    const model = getProjectModel();
+
+    if (!id.match(/^[a-f\d]{24}$/i)) {
+      return null;
+    }
+
+    const doc = await model
+      .findOneAndUpdate({ _id: id, tenantId }, { spend }, { new: true })
+      .exec();
     return doc ? toProject(doc) : null;
   },
 });
