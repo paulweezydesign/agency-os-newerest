@@ -6,6 +6,7 @@ import { createInMemoryBudgetAlertRepository } from "./budget-alert-repository";
 import { createInMemoryProjectRepository } from "./project-repository";
 import { createProjectService } from "./project-service";
 import {
+  handleBindGithubRepo,
   handleCreateProject,
   handleGetProject,
   handleListProjectsForClient,
@@ -204,6 +205,33 @@ describe("projects API handlers", () => {
     expect(result).toEqual({
       status: 404,
       body: { error: "Not found" },
+    });
+  });
+
+  it("binds a GitHub repo for an operator", async () => {
+    const { projects, client } = await createDeps();
+    const created = await handleCreateProject({
+      session: operatorSession,
+      service: projects,
+      clientId: client.id,
+      body: projectBody,
+    });
+
+    expect(created.status).toBe(201);
+    if (created.status !== 201) {
+      return;
+    }
+
+    const result = await handleBindGithubRepo({
+      session: operatorSession,
+      service: projects,
+      projectId: created.body.id,
+      body: { githubRepo: "acme/website" },
+    });
+
+    expect(result).toMatchObject({
+      status: 200,
+      body: { githubRepo: "acme/website" },
     });
   });
 });

@@ -4,10 +4,10 @@
 
 **Blocked by:** 05 — Project Manager agent chat
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Project can store a linked GitHub repo binding
-- [ ] Agent/tool flow opens a branch and PR from a Task
-- [ ] No agent path merges to protected branches
-- [ ] Failures surface actionable errors and are logged
-- [ ] Integration tests pass with mocked GitHub
+- [x] Project can store a linked GitHub repo binding
+- [x] Agent/tool flow opens a branch and PR from a Task
+- [x] No agent path merges to protected branches
+- [x] Failures surface actionable errors and are logged
+- [x] Integration tests pass with mocked GitHub

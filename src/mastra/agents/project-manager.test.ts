@@ -12,6 +12,28 @@ import {
   createProjectManagerAgent,
 } from "./project-manager";
 
+const createAgentDeps = () => {
+  const clients = createClientService(createInMemoryClientRepository());
+  const projectService = createProjectService(
+    createInMemoryProjectRepository(),
+    clients,
+    createInMemoryBudgetAlertRepository(),
+  );
+  const actionLogs = createInMemoryAgentActionLogRepository();
+  const taskService = createTaskService(
+    createInMemoryTaskRepository(),
+    projectService,
+    actionLogs,
+  );
+
+  return {
+    taskService,
+    actionLogs,
+    projectService,
+    github: createInMemoryGitHubClient(),
+  };
+};
+
 describe("project-manager agent", () => {
   it("instructions enforce orchestrate-only (no deliverable execution)", () => {
     expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/orchestrat/i);
@@ -27,19 +49,24 @@ describe("project-manager agent", () => {
       clients,
       createInMemoryBudgetAlertRepository(),
     );
-    const actionLogs = createInMemoryAgentActionLogRepository();
-    const taskService = createTaskService(
-      createInMemoryTaskRepository(),
-      projects,
-      actionLogs,
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(
+      /listTasks|createTask|openPullRequestFromTask/,
     );
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/tools only|through tools/i);
+    expect(PROJECT_MANAGER_INSTRUCTIONS).toMatch(/never merge/i);
+  });
 
-    const agent = createProjectManagerAgent({ taskService, actionLogs });
+  it("exposes listTasks, createTask, and openPullRequestFromTask tools", async () => {
+    const agent = createProjectManagerAgent(createAgentDeps());
     const tools = await agent.listTools();
     const instructions = await agent.getInstructions();
 
     expect(agent.id).toBe("project-manager");
     expect(instructions).toContain("does not complete deliverable work");
-    expect(Object.keys(tools).sort()).toEqual(["createTask", "listTasks"]);
+    expect(Object.keys(tools).sort()).toEqual([
+      "createTask",
+      "listTasks",
+      "openPullRequestFromTask",
+    ]);
   });
 });

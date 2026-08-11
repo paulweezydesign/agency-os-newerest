@@ -82,12 +82,12 @@ Note: Ticket 05 — list/create Task tools + streaming chat; full CRUD/retries d
 
 ## Slice D — GitHub link + PR workflow
 
-**Status:** `todo`
+**Status:** `done`
 
-- [ ] GitHub tools (Octokit): repo link, branch, commit, open PR
-- [ ] Project ↔ repo binding in Mongo
-- [ ] Policy: agents may PR; merge left to humans / branch protection
-- [ ] Integration tests with mocked Octokit
+- [x] GitHub tools (mocked client): branch + open PR from Task
+- [x] Project ↔ repo binding in Mongo (`githubRepo`)
+- [x] Policy: agents may PR; merge left to humans / branch protection (ADR-0004; no merge API)
+- [x] Integration tests with mocked GitHub client
 
 **Exit:** teammate (or PM-assisted flow) opens a PR on a linked repo from a task.
 
