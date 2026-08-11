@@ -78,7 +78,8 @@ const SignInPage = async ({ searchParams }: SignInPageProps) => {
 
       <p className="text-xs text-slate-500">
         Seed users: admin@agencyos.local / admin-dev ·
-        operator@agencyos.local / operator-dev
+        operator@agencyos.local / operator-dev ·
+        client@agencyos.local / client-dev (portal)
       </p>
     </main>
   );
