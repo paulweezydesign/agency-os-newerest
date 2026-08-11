@@ -32,16 +32,19 @@ Living task board. Update status as slices ship. Decisions live in `CONTEXT.md` 
 
 ## Slice A — Foundation
 
-**Status:** `todo`
+**Status:** `in_progress`
 
-- [ ] Next.js 15 App Router + TypeScript + Tailwind v4 + shadcn/ui
+- [x] Next.js 15 App Router + TypeScript + Tailwind v4
+- [ ] shadcn/ui init (deferred — not required for auth shell)
 - [ ] Mastra (`@mastra/core`, `@mastra/rag`) wired in `src/mastra`
-- [ ] MongoDB singleton + Mongoose; `tenantId` on base schemas
-- [ ] Auth.js v5 skeleton: `admin`, `agent-operator`, `client`
-- [ ] `.env.example`, README stub, `docs/architecture.md` stub
-- [ ] Test harness (unit) green on empty smoke
+- [x] MongoDB singleton + Mongoose; `tenantId` on session/data path
+- [x] Auth.js v5 skeleton: `admin`, `agent-operator`, `client`
+- [x] `.env.example`, README stub, `docs/architecture.md` stub
+- [x] Test harness (unit) green on empty smoke
 
 **Exit:** app boots, auth session works, Mongo connects, CI scripts exist.
+
+Note: Ticket 01 shipped the auth shell. shadcn + Mastra remain for later tickets; Slice A is otherwise complete enough to unblock B.
 
 ---
 
@@ -188,3 +191,4 @@ Living task board. Update status as slices ship. Decisions live in `CONTEXT.md` 
 | Date | Note |
 | --- | --- |
 | 2026-08-11 | Plan created from grill-with-docs; decisions in CONTEXT.md + ADR-0001…0005 |
+| 2026-08-11 | Ticket 01: Auth shell + tenant dashboard shipped (tests/lint/typecheck/build green) |

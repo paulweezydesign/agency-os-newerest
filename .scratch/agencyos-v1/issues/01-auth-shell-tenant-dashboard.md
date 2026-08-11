@@ -4,10 +4,14 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Auth.js v5 sign-in works for `admin` and `agent-operator` roles
-- [ ] Dashboard shell renders for an authenticated operator
-- [ ] `tenantId` is present on the authenticated session/data path
-- [ ] MongoDB connection succeeds in the app boot path
-- [ ] Unit/smoke test harness is green
+- [x] Auth.js v5 sign-in works for `admin` and `agent-operator` roles
+- [x] Dashboard shell renders for an authenticated operator
+- [x] `tenantId` is present on the authenticated session/data path
+- [x] MongoDB connection succeeds in the app boot path
+- [x] Unit/smoke test harness is green
+
+## Comments
+
+- 2026-08-11: Implemented Next.js 15 + Auth.js credentials seed users, `getSessionContext`, `connectMongo`, dashboard gate, Vitest suite (9 tests). `npm test`, `typecheck`, `lint`, and `build` pass.
