@@ -101,6 +101,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       };
     },
   },
-  // Auth.js infers trust with AUTH_URL; never trust arbitrary proxy headers.
-  trustHost: Boolean(process.env.AUTH_URL),
+  // Let Auth.js infer host trust from AUTH_URL, AUTH_TRUST_HOST, and the platform.
+  // Proxies must still sanitize forwarded host/protocol headers.
 });
