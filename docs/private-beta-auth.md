@@ -20,6 +20,16 @@ The admin allowlist takes precedence if an account appears in both. Never add ar
 
 **Client portal:** GitHub operator identities do not grant portal/client permissions. The old portal seed user is only accessible in explicit development-demo mode. Production client login/provisioning remains a later, separate security milestone; do not treat it as shipped.
 
+## Local OAuth smoke test (no deployment required)
+
+1. Register a **separate development OAuth App** on GitHub under **Settings → Developer settings → OAuth apps**. Set homepage to `http://localhost:3000` and authorization callback to `http://localhost:3000/api/auth/callback/github`.
+2. Put the OAuth App client ID and secret in a local untracked `.env.local`. Set `AUTH_URL=http://localhost:3000`, `AUTH_SECRET` to a random secret of at least 32 characters, and `AGENCYOS_GITHUB_ADMIN_IDS` to **your own numeric GitHub account ID**. Leave `AGENCYOS_ENABLE_DEMO_AUTH=false`.
+3. Start the app locally, open `http://localhost:3000/signin`, sign in as the allowlisted GitHub user, and verify the operator dashboard is available.
+4. Sign out and verify unauthorized users cannot access operator routes. Remove your ID from the allowlist, restart, and verify the prior session no longer authorizes API calls.
+5. Test that normal GitHub OAuth users not on the allowlist are denied. Keep the development OAuth credentials isolated from production and never commit them.
+
+**Reverse proxy:** When deploying behind a trusted reverse proxy, Auth.js supports `AUTH_TRUST_HOST=true`; enable it only after configuring the proxy to sanitize forwarded host/protocol headers. Auth.js can infer this automatically on supported hosting providers. The app does not override this framework detection.
+
 ## Security verification before release
 
 - [ ] Confirm unlisted GitHub IDs cannot sign in or access operator APIs.
