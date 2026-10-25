@@ -86,9 +86,10 @@ describe("middleware session authorization", () => {
       sub: "github:42",
       role: "admin",
       tenantId: "tenant-default",
-    };
+    } satisfies SignedSessionIdentity & { sub: string };
     expect(toMiddlewareAuthSession(unvalidatedToken, production)).toBeNull();
-    expect(toMiddlewareAuthSession({ ...unvalidatedToken, authSource: "unknown" }, production)).toBeNull();
+    // A token with the wrong sign-in origin must not be promoted to GitHub admin.
+    expect(toMiddlewareAuthSession({ ...unvalidatedToken, authSource: "demo" }, production)).toBeNull();
   });
 
   it("never accepts a development-only client token in production", () => {
