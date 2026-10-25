@@ -4,26 +4,7 @@ import { getToken } from "next-auth/jwt";
 import { resolveDashboardAccessForRole } from "@/lib/auth/portal-access";
 import { findSeedClientIdForUser } from "@/lib/auth/seed-users";
 import { resolvePortalAccess } from "@/lib/auth/portal-access";
-import type { AuthSession } from "@/lib/auth/session-context";
-
-const toSession = (token: {
-  id?: unknown;
-  sub?: unknown;
-  role?: unknown;
-  tenantId?: unknown;
-} | null): AuthSession => {
-  if (!token) {
-    return null;
-  }
-
-  return {
-    user: {
-      id: String(token.id ?? token.sub ?? ""),
-      role: String(token.role ?? ""),
-      tenantId: String(token.tenantId ?? ""),
-    },
-  };
-};
+import { toMiddlewareAuthSession } from "@/lib/auth/middleware-session";
 
 export const middleware = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
@@ -38,7 +19,13 @@ export const middleware = async (request: NextRequest) => {
     req: request,
     secret: process.env.AUTH_SECRET,
   });
-  const session = toSession(token);
+  // Recheck the active allowlist on every protected page request.
+  const session = toMiddlewareAuthSession(token, {
+    environment: process.env.NODE_ENV,
+    demoFlag: process.env.AGENCYOS_ENABLE_DEMO_AUTH,
+    adminIds: process.env.AGENCYOS_GITHUB_ADMIN_IDS,
+    operatorIds: process.env.AGENCYOS_GITHUB_OPERATOR_IDS,
+  });
 
   if (isDashboard) {
     const access = resolveDashboardAccessForRole(session);
