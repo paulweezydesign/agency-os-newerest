@@ -7,6 +7,7 @@ import {
   isGitHubOAuthConfigured,
   isLocalDemoAuthEnabled,
   resolveGitHubOperator,
+  resolveActiveSessionIdentity,
 } from "@/lib/auth/operator-identity";
 
 declare module "next-auth" {
@@ -83,17 +84,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     session: async ({ session, token }) => {
       const typed = token as JWT;
-      let authorized: { id: string; role: AppRole; tenantId: string } | null = null;
-      if (typed.authSource === "github" && typed.id?.startsWith("github:")) {
-        const operator = resolveGitHubOperator(
-          typed.id.slice("github:".length),
-          process.env.AGENCYOS_GITHUB_ADMIN_IDS,
-          process.env.AGENCYOS_GITHUB_OPERATOR_IDS,
-        );
-        if (operator) authorized = { id: operator.id, role: operator.role, tenantId: operator.tenantId };
-      } else if (typed.authSource === "demo" && demoEnabled && typed.id && typed.role && typed.tenantId) {
-        authorized = { id: typed.id, role: typed.role, tenantId: typed.tenantId };
-      }
+      const authorized = resolveActiveSessionIdentity(typed, {
+        environment: process.env.NODE_ENV,
+        demoFlag: process.env.AGENCYOS_ENABLE_DEMO_AUTH,
+        adminIds: process.env.AGENCYOS_GITHUB_ADMIN_IDS,
+        operatorIds: process.env.AGENCYOS_GITHUB_OPERATOR_IDS,
+      });
       return {
         ...session,
         user: {
@@ -105,5 +101,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       };
     },
   },
-  trustHost: false,
+  // Auth.js infers trust with AUTH_URL; never trust arbitrary proxy headers.
+  trustHost: Boolean(process.env.AUTH_URL),
 });
