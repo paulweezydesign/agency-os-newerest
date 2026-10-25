@@ -4,6 +4,7 @@ import {
   isGitHubOAuthConfigured,
   resolveGitHubOperator,
   safeSignInReturnPath,
+  resolveActiveSessionIdentity,
 } from "./operator-identity";
 
 describe("private-beta authentication policy", () => {
@@ -69,5 +70,44 @@ describe("private-beta authentication policy", () => {
     expect(safeSignInReturnPath("//example.com")).toBe("/dashboard");
     expect(safeSignInReturnPath("/api/policy-gates")).toBe("/dashboard");
     expect(safeSignInReturnPath("/dashboard/../../evil")).toBe("/dashboard");
+  });
+});
+
+describe("active session validation", () => {
+  const config = {
+    environment: "production",
+    demoFlag: "true",
+    adminIds: "42",
+    operatorIds: "43",
+  };
+  it("authorizes an allowed GitHub account without trusting JWT role claims", () => {
+    expect(resolveActiveSessionIdentity({
+      authSource: "github", id: "github:42", role: "client", tenantId: "other",
+    }, config)).toEqual({ id: "github:42", role: "admin", tenantId: "tenant-default" });
+  });
+  it("revokes GitHub access after allowlist removal", () => {
+    expect(resolveActiveSessionIdentity({ authSource: "github", id: "github:42" }, {
+      ...config, adminIds: "",
+    })).toBeNull();
+  });
+  it("denies malformed and unknown session origins", () => {
+    expect(resolveActiveSessionIdentity({ authSource: "github", id: "github:0" }, config)).toBeNull();
+    expect(resolveActiveSessionIdentity({ authSource: "github", id: "github:bad" }, config)).toBeNull();
+    expect(resolveActiveSessionIdentity({ id: "github:42" }, config)).toBeNull();
+  });
+  it("cannot re-enable demo credentials in production", () => {
+    expect(resolveActiveSessionIdentity({
+      authSource: "demo", id: "user-admin", role: "admin", tenantId: "tenant-default",
+    }, config)).toBeNull();
+  });
+  it("accepts a valid demo user only in explicitly opted-in development mode", () => {
+    expect(resolveActiveSessionIdentity({
+      authSource: "demo", id: "user-admin", role: "admin", tenantId: "tenant-default",
+    }, { ...config, environment: "development" })).toEqual({
+      id: "user-admin", role: "admin", tenantId: "tenant-default",
+    });
+    expect(resolveActiveSessionIdentity({
+      authSource: "demo", id: "user-admin", role: "admin", tenantId: "different",
+    }, { ...config, environment: "development" })).toBeNull();
   });
 });
