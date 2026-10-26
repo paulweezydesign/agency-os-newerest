@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { readAuthSessionToken } from "@/lib/auth/read-session-token";
 import { resolveDashboardAccessForRole } from "@/lib/auth/portal-access";
 import { findSeedClientIdForUser } from "@/lib/auth/seed-users";
 import { resolvePortalAccess } from "@/lib/auth/portal-access";
@@ -15,10 +15,7 @@ export const middleware = async (request: NextRequest) => {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  const token = await readAuthSessionToken(request, process.env.AUTH_SECRET);
   // Recheck the active allowlist on every protected page request.
   const session = toMiddlewareAuthSession(token, {
     environment: process.env.NODE_ENV,
