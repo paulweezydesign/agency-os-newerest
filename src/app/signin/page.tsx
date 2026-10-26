@@ -1,6 +1,7 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
+import { GitHubSignInButton } from "./github-sign-in-button";
 import { isGitHubOAuthConfigured, isLocalDemoAuthEnabled, safeSignInReturnPath } from "@/lib/auth/operator-identity";
 
 type SignInPageProps = {
@@ -26,14 +27,7 @@ const SignInPage = async ({ searchParams }: SignInPageProps) => {
         </p>
       ) : null}
       {githubReady ? (
-        <form action={async () => {
-          "use server";
-          await signIn("github", { redirectTo: destination });
-        }}>
-          <button type="submit" className="w-full rounded-lg bg-pink-600 px-5 py-3 text-base font-semibold text-white hover:bg-pink-700 focus-visible:outline-4 focus-visible:outline-pink-500">
-            Continue with GitHub
-          </button>
-        </form>
+        <GitHubSignInButton redirectTo={destination} />
       ) : (
         <p className="rounded-md border border-amber-200 p-4 text-base" role="status">
           GitHub sign-in is not configured. Contact the AgencyOS administrator.
