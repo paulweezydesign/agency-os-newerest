@@ -58,6 +58,41 @@ describe("clients API handlers", () => {
     expect(listed.body[0]).toMatchObject({ name: "Acme Co" });
   });
 
+  it("persists a new lead contact email through the API handler", async () => {
+    const { service } = createDeps();
+
+    const result = await handleCreateClient({
+      session: operatorSession,
+      service,
+      body: { name: "Acme Co", contactEmail: " lead@acme.test " },
+    });
+
+    expect(result.status).toBe(201);
+    if (result.status !== 201) {
+      throw new Error("expected create success");
+    }
+    expect(result.body.contactEmail).toBe("lead@acme.test");
+
+    const saved = await service.get("tenant-default", result.body.id);
+    expect(saved?.contactEmail).toBe("lead@acme.test");
+  });
+
+  it("rejects an invalid lead email without creating a record", async () => {
+    const { service } = createDeps();
+
+    const result = await handleCreateClient({
+      session: operatorSession,
+      service,
+      body: { name: "Acme Co", contactEmail: "not-an-email" },
+    });
+
+    expect(result).toEqual({
+      status: 400,
+      body: { error: "Invalid request" },
+    });
+    expect(await service.list("tenant-default")).toHaveLength(0);
+  });
+
   it("allows an operator to get a client by id", async () => {
     const { service } = createDeps();
     const created = await handleCreateClient({

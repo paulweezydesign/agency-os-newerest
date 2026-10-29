@@ -20,7 +20,10 @@ export const createClientAction = async (
   const result = await handleCreateClient({
     session,
     service,
-    body: { name: String(formData.get("name") ?? "") },
+    body: {
+      name: String(formData.get("name") ?? ""),
+      contactEmail: String(formData.get("contactEmail") ?? "").trim() || undefined,
+    },
   });
 
   if (result.status === 201) {

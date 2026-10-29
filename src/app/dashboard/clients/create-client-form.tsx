@@ -27,6 +27,16 @@ export const CreateClientForm = () => {
           disabled={pending}
         />
       </label>
+      <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-slate-700">
+        Contact email (optional)
+        <input
+          className="rounded-md border border-slate-300 px-3 py-2"
+          name="contactEmail"
+          type="email"
+          placeholder="lead@example.com"
+          disabled={pending}
+        />
+      </label>
       <div className="flex items-end">
         <button
           className="rounded-md bg-teal-800 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60"

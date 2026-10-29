@@ -54,6 +54,7 @@ export const handleCreateClient = async ({
     const created = await service.create({
       tenantId: access.context.tenantId,
       name: parsed.name,
+      contactEmail: parsed.contactEmail,
     });
 
     return { status: 201, body: created };
