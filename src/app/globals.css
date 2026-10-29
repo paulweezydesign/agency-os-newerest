@@ -139,3 +139,60 @@ body {
     @apply font-sans;
   }
 }
+
+/* AgencyOS accessible black / white / DeepPink theme.
+   Legacy page utility classes are mapped here until screens are tokenized. */
+:root {
+  --brand-pink: #a30060;
+  --background: #f8f7fa;
+  --foreground: #111015;
+  --card: #ffffff;
+  --card-foreground: #111015;
+  --primary: #a30060;
+  --primary-foreground: #ffffff;
+  --border: #d9cfda;
+  --muted-foreground: #5f5965;
+  color-scheme: light;
+}
+html.dark {
+  --brand-pink: #ff1493;
+  --background: #0b0b0c;
+  --foreground: #ffffff;
+  --card: #17131a;
+  --card-foreground: #ffffff;
+  --primary: #ff1493;
+  --primary-foreground: #0b0b0c;
+  --border: #514654;
+  --muted-foreground: #d9cfda;
+  color-scheme: dark;
+}
+body { background: var(--background); color: var(--foreground); }
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid #ff1493;
+  outline-offset: 3px;
+}
+@layer utilities {
+  .text-teal-800, .text-teal-900 { color: #a30060; }
+  .bg-teal-800 { background-color: #a30060; }
+  .border-teal-800 { border-color: #a30060; }
+  .hover\:bg-teal-700:hover { background-color: #7d004a; }
+  .hover\:text-teal-800:hover, .hover\:underline:hover { text-decoration-thickness: 2px; }
+  .dark .bg-white { background-color: #17131a; }
+  .dark .bg-slate-50, .dark .bg-slate-100 { background-color: #272129; }
+  .dark .bg-teal-50 { background-color: #35202f; }
+  .dark .text-slate-900, .dark .text-slate-800, .dark .text-slate-700 { color: #ffffff; }
+  .dark .text-slate-600, .dark .text-slate-500, .dark .text-slate-400 { color: #d9cfda; }
+  .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #514654; }
+  .dark .text-teal-800, .dark .text-teal-900 { color: #ff63b8; }
+  .dark .bg-teal-800 { background-color: #ff1493; color: #0b0b0c; }
+  .dark .border-teal-800 { border-color: #ff1493; }
+  .dark .hover\:bg-teal-700:hover { background-color: #ff63b8; }
+  .dark input, .dark textarea, .dark select { background-color: #17131a; color: #ffffff; }
+  .dark input::placeholder, .dark textarea::placeholder { color: #d9cfda; }
+  .dark .bg-amber-50 { background-color: #332612; }
+  .dark .text-amber-950, .dark .text-amber-800 { color: #ffe2a0; }
+  .dark .border-amber-200 { border-color: #aa8b4e; }
+  .dark .bg-red-50 { background-color: #391a25; }
+  .dark .text-red-700 { color: #ffbacb; }
+  .dark .border-red-200 { border-color: #be6a7d; }
+}
