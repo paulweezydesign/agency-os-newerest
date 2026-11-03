@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AuthSession } from "@/lib/auth/session-context";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
-import {
-  createDemoEffectRunner,
-  createDemoEffectStore,
-} from "./demo-effects";
+import { createDemoEffectRunner, createDemoEffectStore } from "./demo-effects";
 import { createInMemoryPolicyGateRepository } from "./policy-gate-repository";
 import { createPolicyGateService } from "./policy-gate-service";
 import {
@@ -168,7 +165,9 @@ describe("handleDecidePolicyGate", () => {
 
     expect(result).toEqual({
       status: 409,
-      body: { error: "Policy gate already decided" },
+      body: {
+        error: "Policy gate already decided or execution requires review",
+      },
     });
     expect(store.runCount()).toBe(0);
   });
@@ -208,4 +207,23 @@ describe("handleListPolicyGates", () => {
     expect(listed.body).toHaveLength(1);
     expect(listed.body[0]?.tenantId).toBe("tenant-default");
   });
+});
+
+it("records the authenticated decision actor despite a caller override", async () => {
+  const { service } = createService();
+  const gate = await service.request({
+    tenantId: "tenant-default",
+    actionType: "client_email",
+    payload: { to: "lead@example.test" },
+    requestedBy: "test",
+    correlationId: "test",
+  });
+  const result = await handleDecidePolicyGate({
+    session: operatorSession,
+    service,
+    gateId: gate.id,
+    body: { decision: "deny", actorName: "forged-admin" },
+  });
+  expect(result.status).toBe(200);
+  expect(result.body).toMatchObject({ decidedBy: "agent-operator:user-1" });
 });

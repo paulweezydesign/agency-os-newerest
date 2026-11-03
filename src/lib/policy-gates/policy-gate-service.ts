@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { AgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
 import type { SlackNotifier } from "@/lib/slack/notify";
 import type { PolicyGateRepository } from "./policy-gate-repository";
@@ -27,6 +28,9 @@ export type PolicyGateEffectRunner = (input: {
   payload: Record<string, unknown>;
   projectId?: string;
   tenantId: string;
+  workflowRunId?: string;
+  idempotencyKey?: string;
+  correlationId?: string;
 }) => Promise<unknown>;
 
 export type PolicyGateService = {
@@ -37,6 +41,8 @@ export type PolicyGateService = {
     projectId?: string;
     requestedBy: string;
     correlationId: string;
+    requestKey?: string;
+    workflowRunId?: string;
   }) => Promise<PolicyGate>;
   listPending: (tenantId: string) => Promise<PolicyGate[]>;
   list: (tenantId: string, limit?: number) => Promise<PolicyGate[]>;
@@ -67,6 +73,8 @@ export const createPolicyGateService = (
     projectId,
     requestedBy,
     correlationId,
+    requestKey,
+    workflowRunId,
   }) => {
     const parsed = requestPolicyGateInputSchema.parse({
       actionType,
@@ -81,6 +89,8 @@ export const createPolicyGateService = (
       projectId: parsed.projectId,
       requestedBy,
       correlationId,
+      requestKey,
+      workflowRunId,
     });
 
     await actionLogs.append({
@@ -98,12 +108,13 @@ export const createPolicyGateService = (
       projectId: parsed.projectId,
     });
 
-    await notifier?.notifyPolicyGate({
-      tenantId,
-      event: "requested",
-      gate,
-      correlationId,
-    });
+    if (!gate.workflowRunId)
+      await notifier?.notifyPolicyGate({
+        tenantId,
+        event: "requested",
+        gate,
+        correlationId,
+      });
 
     return gate;
   },
@@ -117,46 +128,65 @@ export const createPolicyGateService = (
       throw new PolicyGateNotFoundError();
     }
 
-    if (existing.status !== "pending") {
+    if (existing.status !== "pending" || existing.executionState) {
       throw new PolicyGateNotPendingError(
         `Policy gate is already ${existing.status}`,
       );
     }
 
-    await runEffect({
-      actionType: existing.actionType,
-      payload: existing.payload,
-      projectId: existing.projectId,
+    const claimToken = randomUUID();
+    const claimed = await repository.claim(
       tenantId,
-    });
-
-    const gate = await repository.applyDecision(tenantId, gateId, {
-      status: "approved",
+      gateId,
       decidedBy,
-      effectRan: true,
-    });
-
-    if (!gate) {
-      throw new PolicyGateNotFoundError();
+      claimToken,
+    );
+    if (!claimed) throw new PolicyGateNotPendingError();
+    let gate: PolicyGate;
+    try {
+      await runEffect({
+        actionType: claimed.actionType,
+        payload: claimed.payload,
+        projectId: claimed.projectId,
+        tenantId,
+        workflowRunId: claimed.workflowRunId,
+        idempotencyKey: `${tenantId}:${gateId}`,
+        correlationId: claimed.correlationId,
+      });
+      const completed = await repository.applyDecision(tenantId, gateId, {
+        status: "approved",
+        decidedBy,
+        effectRan: true,
+        claimToken,
+      });
+      if (!completed) throw new Error("Approval completion is uncertain");
+      gate = completed;
+    } catch (error) {
+      // A thrown effect or write may have succeeded remotely. Never release the claim.
+      await repository
+        .markUncertain(tenantId, gateId, claimToken)
+        .catch(() => undefined);
+      throw error;
     }
 
     await actionLogs.append({
       tenantId,
       agentName: decidedBy,
       toolName: "policyGates.approve",
-      input: { gateId },
+      input: { gateId, decisionCorrelationId: correlationId },
       output: { gate },
       status: "success",
-      correlationId,
+      correlationId: gate.workflowRunId ? gate.correlationId : correlationId,
       projectId: gate.projectId,
     });
 
-    await notifier?.notifyPolicyGate({
-      tenantId,
-      event: "approved",
-      gate,
-      correlationId,
-    });
+    if (!gate.workflowRunId)
+      await notifier?.notifyPolicyGate({
+        tenantId,
+        event: "approved",
+        gate,
+        correlationId,
+      });
 
     return gate;
   },
@@ -168,7 +198,7 @@ export const createPolicyGateService = (
       throw new PolicyGateNotFoundError();
     }
 
-    if (existing.status !== "pending") {
+    if (existing.status !== "pending" || existing.executionState) {
       throw new PolicyGateNotPendingError(
         `Policy gate is already ${existing.status}`,
       );
@@ -188,19 +218,20 @@ export const createPolicyGateService = (
       tenantId,
       agentName: decidedBy,
       toolName: "policyGates.deny",
-      input: { gateId },
+      input: { gateId, decisionCorrelationId: correlationId },
       output: { gate },
       status: "success",
-      correlationId,
+      correlationId: gate.workflowRunId ? gate.correlationId : correlationId,
       projectId: gate.projectId,
     });
 
-    await notifier?.notifyPolicyGate({
-      tenantId,
-      event: "denied",
-      gate,
-      correlationId,
-    });
+    if (!gate.workflowRunId)
+      await notifier?.notifyPolicyGate({
+        tenantId,
+        event: "denied",
+        gate,
+        correlationId,
+      });
 
     return gate;
   },

@@ -58,8 +58,8 @@ const PolicyGatesPage = async () => {
           Request demo client email gate
         </h2>
         <p className="mt-2 text-sm text-slate-600">
-          Creates a pending `client_email` gate. Approve runs a demo effect
-          (no Resend send).
+          Creates a pending `client_email` gate. Approve runs a demo effect (no
+          Resend send).
         </p>
         <div className="mt-4">
           <RequestClientEmailForm />
@@ -88,7 +88,14 @@ const PolicyGatesPage = async () => {
                   {JSON.stringify(gate.payload, null, 2)}
                 </pre>
                 <div className="mt-3">
-                  <PolicyGateDecisionButtons gateId={gate.id} />
+                  {gate.executionState ? (
+                    <p role="status">
+                      Execution {gate.executionState}. Further decisions are
+                      blocked; review the recorded outcome before recovery.
+                    </p>
+                  ) : (
+                    <PolicyGateDecisionButtons gateId={gate.id} />
+                  )}
                 </div>
               </li>
             ))}

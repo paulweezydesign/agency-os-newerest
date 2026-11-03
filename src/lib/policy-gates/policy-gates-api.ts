@@ -69,10 +69,8 @@ const requireOperator = (session: AuthSession) => {
   }
 };
 
-const actorFromSession = (
-  context: { role: string; userId: string },
-  override?: string,
-) => override?.trim() || `${context.role}:${context.userId}`;
+const actorFromSession = (context: { role: string; userId: string }) =>
+  `${context.role}:${context.userId}`;
 
 export const handleListPolicyGates = async ({
   session,
@@ -112,7 +110,7 @@ export const handleRequestPolicyGate = async ({
       payload: parsed.payload,
       projectId: parsed.projectId,
       correlationId,
-      requestedBy: actorFromSession(access.context, parsed.actorName),
+      requestedBy: actorFromSession(access.context),
     });
 
     return { status: 201, body: gate };
@@ -141,7 +139,7 @@ export const handleDecidePolicyGate = async ({
   try {
     const parsed = decisionBodySchema.parse(body ?? {});
     const correlationId = parsed.correlationId?.trim() || randomUUID();
-    const decidedBy = actorFromSession(access.context, parsed.actorName);
+    const decidedBy = actorFromSession(access.context);
 
     const decide = async () => {
       switch (parsed.decision) {
@@ -176,7 +174,12 @@ export const handleDecidePolicyGate = async ({
       return { status: 404, body: { error: "Policy gate not found" } };
     }
     if (error instanceof PolicyGateNotPendingError) {
-      return { status: 409, body: { error: "Policy gate already decided" } };
+      return {
+        status: 409,
+        body: {
+          error: "Policy gate already decided or execution requires review",
+        },
+      };
     }
     throw error;
   }

@@ -19,6 +19,15 @@ const policyGateSchema = new Schema(
     requestedBy: { type: String, required: true },
     decidedBy: { type: String, required: false },
     correlationId: { type: String, required: true },
+    executionState: {
+      type: String,
+      enum: ["claimed", "uncertain", "completed"],
+    },
+    claimToken: String,
+    claimedAt: Date,
+    requestKey: String,
+    requestFingerprint: String,
+    workflowRunId: String,
     effectRan: { type: Boolean, required: true, default: false },
     decidedAt: { type: Date, required: false },
   },
@@ -41,7 +50,6 @@ const modelName = "PolicyGate";
 export const getPolicyGateModel = (): PolicyGateModel => {
   const existing = mongoose.models[modelName] as PolicyGateModel | undefined;
   return (
-    existing ??
-    mongoose.model<PolicyGateDocument>(modelName, policyGateSchema)
+    existing ?? mongoose.model<PolicyGateDocument>(modelName, policyGateSchema)
   );
 };

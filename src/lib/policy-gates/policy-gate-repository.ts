@@ -1,3 +1,4 @@
+import { gateRequestIdentity } from "./request-identity";
 import { randomUUID } from "node:crypto";
 import type {
   PolicyGate,
@@ -12,12 +13,15 @@ export type PolicyGateCreateRecord = {
   projectId?: string;
   requestedBy: string;
   correlationId: string;
+  requestKey?: string;
+  workflowRunId?: string;
 };
 
 export type PolicyGateDecisionRecord = {
   status: Exclude<PolicyGateStatus, "pending">;
   decidedBy: string;
   effectRan: boolean;
+  claimToken?: string;
 };
 
 export type PolicyGateRepository = {
@@ -28,6 +32,17 @@ export type PolicyGateRepository = {
   ) => Promise<PolicyGate | null>;
   listByTenant: (tenantId: string, limit?: number) => Promise<PolicyGate[]>;
   listPendingByTenant: (tenantId: string) => Promise<PolicyGate[]>;
+  claim: (
+    tenantId: string,
+    id: string,
+    decidedBy: string,
+    claimToken: string,
+  ) => Promise<PolicyGate | null>;
+  markUncertain: (
+    tenantId: string,
+    id: string,
+    claimToken: string,
+  ) => Promise<void>;
   applyDecision: (
     tenantId: string,
     id: string,
@@ -40,8 +55,19 @@ export const createInMemoryPolicyGateRepository = (): PolicyGateRepository => {
 
   return {
     create: async (input) => {
+      const identity = gateRequestIdentity(input);
+      const previous =
+        identity && gates.find((gate) => gate.id === identity.id);
+      if (previous) {
+        if (previous.requestFingerprint !== identity.requestFingerprint)
+          throw new Error("Policy gate request key conflict");
+        return structuredClone(previous);
+      }
       const gate: PolicyGate = {
-        id: randomUUID(),
+        ...identity,
+        requestKey: input.requestKey,
+        workflowRunId: input.workflowRunId,
+        id: identity?.id ?? randomUUID(),
         tenantId: input.tenantId,
         actionType: input.actionType,
         status: "pending",
@@ -69,15 +95,51 @@ export const createInMemoryPolicyGateRepository = (): PolicyGateRepository => {
           (gate) => gate.tenantId === tenantId && gate.status === "pending",
         )
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    claim: async (tenantId, id, decidedBy, claimToken) => {
+      const gate = gates.find(
+        (g) =>
+          g.tenantId === tenantId &&
+          g.id === id &&
+          g.status === "pending" &&
+          !g.executionState,
+      );
+      if (!gate) return null;
+      Object.assign(gate, {
+        executionState: "claimed",
+        claimToken,
+        decidedBy,
+        claimedAt: new Date().toISOString(),
+      });
+      return structuredClone(gate);
+    },
+    markUncertain: async (tenantId, id, claimToken) => {
+      const gate = gates.find(
+        (g) =>
+          g.tenantId === tenantId &&
+          g.id === id &&
+          g.claimToken === claimToken &&
+          g.executionState === "claimed",
+      );
+      if (gate) gate.executionState = "uncertain";
+    },
     applyDecision: async (tenantId, id, decision) => {
       const gate = gates.find(
-        (entry) => entry.tenantId === tenantId && entry.id === id,
+        (entry) =>
+          entry.tenantId === tenantId &&
+          entry.id === id &&
+          entry.status === "pending" &&
+          (decision.status === "approved"
+            ? entry.executionState === "claimed" &&
+              !!decision.claimToken &&
+              entry.claimToken === decision.claimToken
+            : !entry.executionState),
       );
       if (!gate) {
         return null;
       }
 
       gate.status = decision.status;
+      if (decision.status === "approved") gate.executionState = "completed";
       gate.decidedBy = decision.decidedBy;
       gate.effectRan = decision.effectRan;
       gate.decidedAt = new Date().toISOString();

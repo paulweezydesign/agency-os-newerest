@@ -6,11 +6,7 @@ export const policyGateActionTypeSchema = z.enum([
   "invoice_or_deposit",
 ]);
 
-export const policyGateStatusSchema = z.enum([
-  "pending",
-  "approved",
-  "denied",
-]);
+export const policyGateStatusSchema = z.enum(["pending", "approved", "denied"]);
 
 export const policyGatePayloadSchema = z.record(z.string(), z.unknown());
 
@@ -24,6 +20,12 @@ export const policyGateSchema = z.object({
   requestedBy: z.string().min(1),
   decidedBy: z.string().optional(),
   correlationId: z.string().min(1),
+  executionState: z.enum(["claimed", "uncertain", "completed"]).optional(),
+  claimToken: z.string().optional(),
+  claimedAt: z.string().optional(),
+  requestKey: z.string().optional(),
+  requestFingerprint: z.string().optional(),
+  workflowRunId: z.string().optional(),
   effectRan: z.boolean(),
   createdAt: z.string().min(1),
   decidedAt: z.string().optional(),
