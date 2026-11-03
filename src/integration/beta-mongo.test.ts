@@ -191,6 +191,18 @@ describe.skipIf(!uri)("isolated Mongo integration and process restart", () => {
         ).rejects.toThrow();
         if (score === 45) await service.deny(decision(gates[0].id));
         if (score === 70) await service.approve(decision(gates[0].id));
+        if (score === 45 || score === 70) {
+          // UI inspection must show the live decision before workflow resume.
+          const inspected = await runtime.inspect(
+            tenantId,
+            client.id,
+            input.workflowRunId,
+          );
+          expect(inspected.state).toBe("suspended");
+          expect(inspected.gates[0].status).toBe(
+            score === 45 ? "denied" : "approved",
+          );
+        }
         if (score === 40) {
           const waiting = await runtime.resume(
             tenantId,

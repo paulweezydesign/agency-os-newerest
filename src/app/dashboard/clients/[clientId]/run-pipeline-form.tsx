@@ -1,14 +1,30 @@
 "use client";
 
+import { DurablePipelineForm } from "./durable-pipeline-form";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 type RunPipelineFormProps = {
   clientId: string;
   defaultEmail?: string;
+  tenantId: string;
+  durableWorkflowEnabled: boolean;
+  syntheticContact: boolean;
 };
 
-export const RunPipelineForm = ({
+export const RunPipelineForm = (props: RunPipelineFormProps) =>
+  props.durableWorkflowEnabled ? (
+    <DurablePipelineForm
+      key={`${props.tenantId}:${props.clientId}`}
+      tenantId={props.tenantId}
+      clientId={props.clientId}
+      syntheticContact={props.syntheticContact}
+    />
+  ) : (
+    <LegacyPipelineForm {...props} />
+  );
+
+const LegacyPipelineForm = ({
   clientId,
   defaultEmail = "",
 }: RunPipelineFormProps) => {

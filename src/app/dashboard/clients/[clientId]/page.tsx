@@ -1,3 +1,5 @@
+import { isBetaWorkflowEnabled } from "@/lib/client-pipeline/beta-workflow-enabled";
+import { syntheticEmailSchema } from "@/lib/policy-gates/dry-run-effects";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -50,6 +52,7 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
   });
   const projects = listed.status === 200 ? listed.body : [];
   const client = result.body;
+  const durableWorkflowEnabled = isBetaWorkflowEnabled();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-10">
@@ -99,12 +102,18 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-medium text-slate-900">Client pipeline</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Prospect → qualify → nurture/onboard with lead-score branching.
-          Client email is policy-gated before Resend.
+          {durableWorkflowEnabled
+            ? "Durable dry-run workflow with human approval. Run, inspect, and resume using the same saved identity."
+            : "Prospect → qualify → nurture/onboard with lead-score branching. Client email is policy-gated before Resend."}
         </p>
         <div className="mt-4">
           <RunPipelineForm
             clientId={clientId}
+            tenantId={context!.tenantId}
+            durableWorkflowEnabled={durableWorkflowEnabled}
+            syntheticContact={
+              syntheticEmailSchema.safeParse(client.contactEmail).success
+            }
             defaultEmail={client.contactEmail ?? ""}
           />
         </div>

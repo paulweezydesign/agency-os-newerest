@@ -40,6 +40,7 @@ it("binds tenant, actor and run identity to authenticated context across retries
       correlationId: "test",
       state: "success" as const,
       snapshot: null,
+      gates: [],
     })),
     inspect: vi.fn(),
     resume: vi.fn(),

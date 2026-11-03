@@ -1,3 +1,4 @@
+import { createMongoosePolicyGateRepository } from "@/lib/policy-gates/mongoose-policy-gate-repository";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -11,7 +12,11 @@ import { RequestClientEmailForm } from "./request-client-email-form";
 
 export const dynamic = "force-dynamic";
 
-const PolicyGatesPage = async () => {
+const PolicyGatesPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ gateId?: string | string[] }>;
+}) => {
   const authSession = toAuthSession(await auth());
   const context = getSessionContext(authSession);
   const access = resolveDashboardAccess(context);
@@ -27,6 +32,20 @@ const PolicyGatesPage = async () => {
     pendingOnly: false,
   });
   const gates = listed.status === 200 ? listed.body : [];
+  const { gateId } = await searchParams;
+  if (
+    listed.status === 200 &&
+    typeof gateId === "string" &&
+    gateId &&
+    !gates.some((gate) => gate.id === gateId)
+  ) {
+    // Direct links remain useful after a gate ages out of the recent list.
+    const linked = await createMongoosePolicyGateRepository().getByTenantAndId(
+      context!.tenantId,
+      gateId,
+    );
+    if (linked) gates.unshift(linked);
+  }
   const pending = gates.filter((gate) => gate.status === "pending");
   const decided = gates.filter((gate) => gate.status !== "pending");
 
@@ -77,6 +96,7 @@ const PolicyGatesPage = async () => {
             {pending.map((gate) => (
               <li
                 key={gate.id}
+                id={`gate-${gate.id}`}
                 className="rounded-md border border-slate-200 px-4 py-3"
               >
                 <p className="font-medium text-slate-900">{gate.actionType}</p>
@@ -112,6 +132,7 @@ const PolicyGatesPage = async () => {
             {decided.map((gate) => (
               <li
                 key={gate.id}
+                id={`gate-${gate.id}`}
                 className="rounded-md border border-slate-100 px-3 py-2 text-sm text-slate-700"
               >
                 {gate.status} · {gate.actionType} · decided by{" "}

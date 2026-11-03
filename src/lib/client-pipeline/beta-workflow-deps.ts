@@ -1,3 +1,4 @@
+import { isBetaWorkflowEnabled } from "./beta-workflow-enabled";
 import { getClientService } from "@/lib/clients/get-client-service";
 import { createMongoosePolicyGateRepository } from "@/lib/policy-gates/mongoose-policy-gate-repository";
 import { createMongooseAgentActionLogRepository } from "@/lib/agent-action-logs/mongoose-agent-action-log-repository";
@@ -9,10 +10,7 @@ import {
 import { createClientPipelineService } from "./client-pipeline-service";
 
 export const loadBetaWorkflowDeps = async () => {
-  if (
-    process.env.AGENCYOS_BETA_WORKFLOW !== "dry-run" ||
-    process.env.VERCEL_ENV === "production"
-  )
+  if (!isBetaWorkflowEnabled())
     throw new Error("Private beta workflow is disabled");
   const clients = await getClientService();
   const gates = createMongoosePolicyGateRepository();

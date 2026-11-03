@@ -1,3 +1,5 @@
+import { isBetaWorkflowEnabled } from "./beta-workflow-enabled";
+import { getPolicyGateModel } from "@/lib/policy-gates/policy-gate-model";
 import { getClientService } from "@/lib/clients/get-client-service";
 import { syntheticEmailSchema } from "@/lib/policy-gates/dry-run-effects";
 import mongoose from "mongoose";
@@ -23,10 +25,7 @@ type Admission = {
 export class WorkflowConflictError extends Error {}
 
 export const createBetaWorkflowRuntime = async () => {
-  if (
-    process.env.AGENCYOS_BETA_WORKFLOW !== "dry-run" ||
-    process.env.VERCEL_ENV === "production"
-  )
+  if (!isBetaWorkflowEnabled())
     throw new WorkflowConflictError("Private beta workflow is disabled");
   await connectMongo();
   const db = mongoose.connection.db!;
@@ -44,10 +43,21 @@ export const createBetaWorkflowRuntime = async () => {
     const record = await admissions.findOne({ _id: runId, tenantId, clientId });
     if (!record) throw new Error("Workflow run not found for tenant");
     const snapshot = await workflow.getWorkflowRunById(runId);
+    // Approval decisions can change after suspension. Read authoritative gates,
+    // including orphaned gates created before the route-step snapshot committed.
+    const documents = await getPolicyGateModel()
+      .find({ tenantId, workflowRunId: runId })
+      .exec();
+    const gates = documents.map((gate) => ({
+      id: gate._id.toString(),
+      status: gate.status,
+      executionState: gate.executionState ?? undefined,
+    }));
     return {
       runId,
       correlationId: record.correlationId,
       state: record.state,
+      gates,
       snapshot,
     };
   };
