@@ -21,6 +21,7 @@ export type RunClientPipelineInput = {
   contactEmail?: string;
   requestedBy: string;
   correlationId: string;
+  workflowRunId?: string;
 };
 
 export type RunClientPipelineResult = {
@@ -73,7 +74,7 @@ export const createClientPipelineService = (deps: {
     steps.push({
       stage: "prospect",
       agentRole: "prospector",
-      note: "Prospector scored and entered the lead into the pipeline.",
+      note: "Domain service recorded the supplied lead score; no teammate agent was invoked.",
     });
 
     client = await deps.clients.updatePipeline(input.tenantId, input.clientId, {
@@ -127,6 +128,8 @@ export const createClientPipelineService = (deps: {
           body: `Hi ${client.name}, thanks for your interest. We'll share next steps shortly.`,
           requestedBy: input.requestedBy,
           correlationId: input.correlationId,
+          requestKey: `pipeline:${input.clientId}:${input.correlationId}`,
+          workflowRunId: input.workflowRunId,
         });
         pendingEmailGates.push(gate);
         emailGateId = gate.id;
@@ -136,7 +139,7 @@ export const createClientPipelineService = (deps: {
         stage: "nurture",
         agentRole: "nurture",
         note: contactEmail
-          ? "Nurture teammate queued a policy-gated client email."
+          ? "Domain service queued a policy-gated client email."
           : "Nurture stage reached; no contact email available to gate.",
         emailGateId,
       });
@@ -160,6 +163,8 @@ export const createClientPipelineService = (deps: {
         body: `Hi ${client.name}, welcome to AgencyOS onboarding. Your operator will follow up after approval.`,
         requestedBy: input.requestedBy,
         correlationId: input.correlationId,
+        requestKey: `pipeline:${input.clientId}:${input.correlationId}`,
+        workflowRunId: input.workflowRunId,
       });
       pendingEmailGates.push(gate);
       emailGateId = gate.id;
@@ -169,7 +174,7 @@ export const createClientPipelineService = (deps: {
       stage: "onboard",
       agentRole: "onboarding",
       note: contactEmail
-        ? "Onboarding teammate queued a policy-gated welcome email."
+        ? "Domain service queued a policy-gated welcome email."
         : "Onboarding stage reached; no contact email available to gate.",
       emailGateId,
     });

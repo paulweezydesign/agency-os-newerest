@@ -12,13 +12,13 @@ import { createTaskService } from "@/lib/tasks/task-service";
 import { createMastraApp, mastra } from "./index";
 
 describe("createMastraApp", () => {
-  it("exports a Mastra stub with empty registries by default", () => {
+  it("registers the bounded client pipeline without invoking agents", () => {
     const app = createMastraApp();
 
     expect(app).toBeDefined();
     expect(app.listAgents()).toEqual({});
     expect(app.listTools()).toEqual({});
-    expect(app.listWorkflows()).toEqual({});
+    expect(app.listWorkflows().clientPipeline.id).toBe("client-pipeline");
 
     expect(mastra).toBeDefined();
     expect(mastra.listAgents()).toEqual({});
@@ -48,7 +48,9 @@ describe("createMastraApp", () => {
     });
 
     const agents = app.listAgents();
-    const agentIds = Object.values(agents).map((agent) => agent.id).sort();
+    const agentIds = Object.values(agents)
+      .map((agent) => agent.id)
+      .sort();
     expect(agentIds).toEqual(
       ["project-manager", ...SEED_TEAMMATE_ROLES].sort(),
     );
@@ -62,4 +64,22 @@ describe("createMastraApp", () => {
       "reportStatus",
     ]);
   });
+});
+
+it("refuses workflow execution with Mastra's default memory fallback", async () => {
+  const app = createMastraApp();
+  const run = await app
+    .getWorkflow("clientPipeline")
+    .createRun({ runId: "test-no-mongo" });
+  const result = await run.start({
+    inputData: {
+      tenantId: "test",
+      clientId: "test",
+      leadScore: 70,
+      requestedBy: "operator",
+      correlationId: "test-no-mongo",
+      workflowRunId: "test-no-mongo",
+    },
+  });
+  expect(result.status).toBe("failed");
 });

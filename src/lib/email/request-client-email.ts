@@ -15,11 +15,14 @@ export const requestClientEmailGate = (input: {
   projectId?: string;
   requestedBy: string;
   correlationId: string;
+  requestKey?: string;
+  workflowRunId?: string;
 }): Promise<PolicyGate> =>
   input.policyGates.request({
     tenantId: input.tenantId,
     actionType: "client_email",
     payload: {
+      ...(input.workflowRunId ? { executionMode: "dry-run" } : {}),
       clientId: input.clientId,
       to: input.to,
       subject: input.subject,
@@ -28,4 +31,6 @@ export const requestClientEmailGate = (input: {
     projectId: input.projectId,
     requestedBy: input.requestedBy,
     correlationId: input.correlationId,
+    requestKey: input.requestKey,
+    workflowRunId: input.workflowRunId,
   });

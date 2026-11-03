@@ -1,3 +1,9 @@
+import type { MongoDBStore } from "@mastra/mongodb";
+import { loadBetaWorkflowDeps } from "@/lib/client-pipeline/beta-workflow-deps";
+import {
+  createClientPipelineWorkflow,
+  type PipelineWorkflowDeps,
+} from "./workflows/client-pipeline";
 import { Mastra } from "@mastra/core";
 import {
   createProjectManagerAgent,
@@ -9,6 +15,8 @@ import { createProjectManagerSpawnTools } from "./tools/spawn-tools";
 import { createProjectManagerTaskTools } from "./tools/task-tools";
 
 export type CreateMastraAppOptions = {
+  storage?: MongoDBStore;
+  loadPipelineDeps?: () => Promise<PipelineWorkflowDeps>;
   projectManagerDeps?: ProjectManagerAgentDeps;
 };
 
@@ -18,12 +26,18 @@ export type CreateMastraAppOptions = {
  */
 export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
   const { projectManagerDeps } = options;
+  const workflows = {
+    clientPipeline: createClientPipelineWorkflow(
+      options.loadPipelineDeps ?? loadBetaWorkflowDeps,
+    ),
+  };
 
   if (!projectManagerDeps) {
     return new Mastra({
       agents: {},
       tools: {},
-      workflows: {},
+      workflows,
+      storage: options.storage,
     });
   }
 
@@ -47,7 +61,8 @@ export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
       ...teammates,
     },
     tools,
-    workflows: {},
+    workflows,
+    storage: options.storage,
   });
 };
 
