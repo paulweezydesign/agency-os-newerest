@@ -43,10 +43,30 @@ git diff --check
 - Ordinary build: failed fetching the existing Geist/Geist Mono fonts from Google, preserving the known environment network limitation.
 - Supplementary font-mocked build: passed compilation and page generation. This is not evidence of normal font fetching or visual/browser correctness. No application font code or provider configuration was changed, and its generated build output is removed after verification.
 - Independent review identified two issues during work: a removed storage key could expose a fresh-start path for a known run, and Client detail data could remain stale after a workflow update. Both were fixed and re-reviewed. No remaining blocking findings were reported. Independent focused coverage passed 43 tests; the refresh follow-up passed seven rendering tests.
-- No browser, protected staging, theme-branch integration, or GitHub CI verification was performed for this UI slice.
+- Local browser verification subsequently passed as recorded below. Protected staging, theme-branch integration, and GitHub CI remain unverified.
 
 ## Remaining acceptance boundary
 
 This code is local and unpublished. The existing Preview does not contain this UI slice; the supplied staging context also says the branch-scoped dry-run flag has not been applied to a fresh deployment. No deployment attempt was retried. A later authorized publication and protected Preview visit are required to exercise the real browser/operator path.
 
 When that is authorized, verify: open a synthetic Client; start and repeat-click once; reload and inspect the same identity; decide the gate through its link; return and inspect; resume; confirm terminal state and refreshed Client stage; deliberately start a new score; verify another tenant/client does not show the earlier saved run. Inspect network requests to confirm there is no legacy fallback. Test storage/network failure and blocked execution states without clearing or replacing backend records.
+
+## Local browser verification
+
+Playwright drove installed Chromium 154.0.8037.57 against `http://127.0.0.1:3100`, using the existing explicitly enabled development-demo operator login. The server ran in development mode with a fresh ephemeral local auth secret, the dry-run flag, and isolated loopback Mongo database `agency27_test_browser_c9a1e6c1de6fa0a5`. No deployed credentials, production auth changes, or deployed database access were used. Fonts used the same temporary mock responses as the supplementary build; this is functional local browser QA, not validation of real font fetching or protected Preview.
+
+The browser passed these checks using real rendered controls:
+
+1. Operator login through the existing local-demo sign-in UI.
+2. Double-click start emitted one workflow start request, produced a pending gate, and left resume disabled.
+3. Reload restored the same request UUID and inspected without starting again.
+4. Approval through the gate UI, followed by current-state inspection and resume, completed the workflow and refreshed the Client's displayed stage/score.
+5. An explicit new run received a different UUID; denial through the gate UI followed by inspect/resume completed that run.
+6. A simulated uncertain gate in the isolated database displayed blocked execution; resume was disabled and no new-run control appeared.
+7. Removing browser storage while mounted produced a blocking error. A retry sent no new start and did not replace the known identity.
+8. Playwright deliberately dropped a start response after allowing the server to commit. UI retry used exactly the same UUID and payload; reload retained it.
+9. Browser storage contained only version, request UUID, and score.
+
+For the final test fixtures, Mongo contained exactly four runs and four gates: one completed approved fake effect and one simulated uncertain gate. No JavaScript page errors or non-local browser requests were observed. Non-local browser requests were blocked by the test harness. Synthetic Clients were created through the authenticated local API as fixture setup; uncertainty was injected only into this isolated local fixture.
+
+The first harness attempt hit Playwright's default five-second assertion timeout while Next compiled the workflow endpoint; the endpoint subsequently returned HTTP 200. The harness was rerun with a 30-second assertion timeout and all checks passed. No application-code change was needed. The local server was stopped and temporary generated build output removed after verification. Existing storage-deletion/full-reload and protected-staging limitations remain as documented above.
