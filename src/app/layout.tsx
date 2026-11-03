@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme/theme-preference";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -24,6 +25,9 @@ const RootLayout = ({
   children: React.ReactNode;
 }>) => (
   <html lang="en" className="dark" suppressHydrationWarning>
+    <head>
+      <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+    </head>
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       {children}
       <ThemeToggle />

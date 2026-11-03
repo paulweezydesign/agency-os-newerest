@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_THEME, THEME_STORAGE_KEY, parseThemePreference, toggleTheme, type ThemePreference } from "@/lib/theme/theme-preference";
+import { THEME_STORAGE_KEY, toggleTheme, type ThemePreference } from "@/lib/theme/theme-preference";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<ThemePreference>(DEFAULT_THEME);
+  const [theme, setTheme] = useState<ThemePreference | null>(null);
   useEffect(() => {
-    let selected = DEFAULT_THEME;
-    try { selected = parseThemePreference(localStorage.getItem(THEME_STORAGE_KEY)); } catch { /* Storage can be unavailable. */ }
-    document.documentElement.classList.toggle("dark", selected === "dark");
-    document.documentElement.style.colorScheme = selected;
-    setTheme(selected);
+    // Read the already-applied bootstrap choice without resetting the page theme.
+    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
   }, []);
+  // Keep server and first hydration markup identical, without a misleading control.
+  if (theme === null) return null;
   const onToggle = () => {
     const next = toggleTheme(theme);
     setTheme(next);
@@ -22,7 +21,6 @@ export function ThemeToggle() {
   return (
     <button type="button" onClick={onToggle}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      aria-pressed={theme === "light"}
       className="fixed bottom-4 right-4 z-50 rounded-lg border border-pink-500 bg-neutral-950 px-4 py-3 text-base font-semibold text-white shadow-lg outline-offset-4 hover:bg-neutral-800 focus-visible:outline-4 focus-visible:outline-pink-500">
       {theme === "dark" ? "Light mode" : "Dark mode"}
     </button>
