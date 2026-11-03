@@ -6,7 +6,13 @@ import { randomUUID } from "node:crypto";
 const db = `agency27_test_${randomUUID().replaceAll("-", "")}`;
 const uri = `mongodb://127.0.0.1:27027/${db}`;
 console.log(`Local evidence database: ${db}`);
-for (const phase of ["seed", "crash-claim", "crash-effect", "recover"]) {
+for (const phase of [
+  "seed",
+  "crash-claim",
+  "crash-effect",
+  "crash-workflow",
+  "recover",
+]) {
   const result = spawnSync(
     process.execPath,
     [

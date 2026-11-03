@@ -8,6 +8,7 @@ import {
   createBetaWorkflowRuntime,
   type BetaWorkflowRuntime,
 } from "@/lib/client-pipeline/beta-workflow-runtime";
+import * as betaDepsModule from "@/lib/client-pipeline/beta-workflow-deps";
 import { loadBetaWorkflowDeps } from "@/lib/client-pipeline/beta-workflow-deps";
 
 const uri = process.env.AGENCYOS_TEST_MONGO_URI;
@@ -41,6 +42,25 @@ describe.skipIf(!uri)("isolated Mongo integration and process restart", () => {
     process.env.MONGODB_URI = uri;
     process.env.AGENCYOS_BETA_WORKFLOW = "dry-run";
     await mongoose.connect(uri);
+    if (phase === "crash-workflow") {
+      const load = betaDepsModule.loadBetaWorkflowDeps;
+      vi.spyOn(betaDepsModule, "loadBetaWorkflowDeps").mockImplementation(
+        async () => {
+          const deps = await load();
+          return {
+            ...deps,
+            pipeline: {
+              run: async (input) => {
+                const result = await deps.pipeline.run(input);
+                // Gate and request audit are durable; route-step output has not returned.
+                process.kill(process.pid, "SIGKILL");
+                return result;
+              },
+            },
+          };
+        },
+      );
+    }
     runtime = await createBetaWorkflowRuntime();
   });
   afterAll(async () => {
@@ -228,6 +248,23 @@ describe.skipIf(!uri)("isolated Mongo integration and process restart", () => {
     "terminates the Node worker at the selected durable crash boundary",
     async () => {
       const key = phase!;
+      if (key === "crash-workflow") {
+        const clients = await getClientService();
+        const client = await clients.create({
+          tenantId,
+          name: "Example Test Agency crashed workflow",
+          contactEmail: "crash@example.test",
+        });
+        await runtime.start({
+          tenantId,
+          clientId: client.id,
+          leadScore: 70,
+          requestedBy: "operator",
+          correlationId: "crashed-workflow",
+          workflowRunId: "crashed-workflow",
+        });
+        throw new Error("Expected process death after gate creation");
+      }
       const gate = await repo.create(request(key));
       await repo.claim(tenantId, gate.id, "operator", "crash-token");
       if (key === "crash-effect") {
@@ -265,6 +302,33 @@ describe.skipIf(!uri)("isolated Mongo integration and process restart", () => {
       }
       expect(effect).not.toHaveBeenCalled();
       const clients = await getClientService();
+      const crashedClient = (await clients.list(tenantId)).find(
+        (c) => c.name === "Example Test Agency crashed workflow",
+      )!;
+      const crashInput = {
+        tenantId,
+        clientId: crashedClient.id,
+        leadScore: 70,
+        requestedBy: "operator",
+        correlationId: "crashed-workflow",
+        workflowRunId: "crashed-workflow",
+      };
+      const originalGate = gates.find(
+        (g) => g.workflowRunId === "crashed-workflow",
+      )!;
+      expect(originalGate).toMatchObject({
+        status: "pending",
+        effectRan: false,
+      });
+      expect((await runtime.start(crashInput)).state).toBe("running");
+      await expect(
+        runtime.resume(tenantId, crashedClient.id, "crashed-workflow"),
+      ).rejects.toThrow(/not safely resumable/);
+      const recoveredGates = (await repo.listByTenant(tenantId, 100)).filter(
+        (g) => g.workflowRunId === "crashed-workflow",
+      );
+      expect(recoveredGates.map((g) => g.id)).toEqual([originalGate.id]);
+
       for (const score of [39, 40, 45, 69, 70]) {
         const client = (await clients.list(tenantId)).find(
           (c) => c.name === `Example Test Agency ${score}`,

@@ -27,7 +27,7 @@ docker run -d --name agency27-mongo -p 127.0.0.1:27027:27017 mongo:7
 node scripts/verify-beta-mongo.mjs
 ```
 
-If the named local test container already exists, start it instead of creating another. The script uses a unique `agency27_test_*` database on loopback port 27027, prints its name, and retains only synthetic evidence. It rejects other database locations. The ordinary test suite intentionally skips Mongo integration when `AGENCYOS_TEST_MONGO_URI` is absent. The integration driver executes separate seed, claim-crash, effect-crash, and recovery Node processes. The two intentional SIGKILL worker failures are expected; the driver requires those failures and then verifies durable records and no duplicate effects in the recovery process. Other failures fail the driver.
+If the named local test container already exists, start it instead of creating another. The script uses a unique `agency27_test_*` database on loopback port 27027, prints its name, and retains only synthetic evidence. It rejects other database locations. The ordinary test suite intentionally skips Mongo integration when `AGENCYOS_TEST_MONGO_URI` is absent. The integration driver executes separate seed, claim-crash, effect-crash, workflow-gate-crash, and recovery Node processes. The three intentional SIGKILL worker failures are expected; the driver requires those failures and then verifies durable records and no duplicate effects in the recovery process. Other failures fail the driver.
 
 Local Mongo is a standalone Docker server. These tests establish concurrency, journaled writes, real process-death behavior, and fresh-process recovery; they do not establish replica-set failover behavior or protected staging acceptance.
 
@@ -57,11 +57,27 @@ Legacy approved/denied rows remain terminal and legacy pending rows without a cl
 - `npm ci --cache /tmp/agency-npm-cache`: passed. The first attempt with npm's default cache failed because `/home/agent/.npm` was not writable; the explicit temporary cache resolved it.
 - `npm run lint`: passed with zero warnings.
 - `npm run typecheck`: passed.
-- `npm test`: 71 files / 248 tests passed; the three opt-in Mongo phase tests are skipped in the ordinary suite.
-- `node scripts/verify-beta-mongo.mjs`: passed. Separate seed/recovery processes plus two deliberately SIGKILLed workers proved durable claims before/after the fake effect and zero duplicate effects on re-entry. Final evidence database: `agency27_test_9370e8ad58314115920a46806a74ee49` on local port 27027. Both crash phases intentionally cause Vitest's “Worker exited unexpectedly”; the driver checks this and verifies the resulting records in its final recovery phase.
+- `npm test`: 71 files / 249 tests passed; the three opt-in Mongo phase tests are skipped in the ordinary suite.
+- `node scripts/verify-beta-mongo.mjs`: passed. Separate seed/recovery processes plus three deliberately SIGKILLed workers proved durable claims before/after the fake effect and zero duplicate effects on re-entry. The third process died immediately after workflow gate creation and request-audit persistence, before the route step returned; recovery preserved exactly one gate and refused to rerun the unfinished admission. Final evidence database: `agency27_test_6b4b72cd63c345fea63b73ea8e3a05e1` on local port 27027. All three crash phases intentionally cause Vitest's “Worker exited unexpectedly”; the driver checks this and verifies the resulting records in its final recovery phase.
 - Ordinary `npm run build`: lint/typecheck/tests passed; Next compilation failed fetching existing Geist/Geist Mono fonts. Direct curl confirmed the network proxy returns HTTP 403 for `fonts.googleapis.com`.
 - Supplementary `NEXT_FONT_GOOGLE_MOCKED_RESPONSES=/tmp/agency27-font-mocks.cjs npm run build`: passed, including Next compilation and page generation. Temporary responses substitute local system-font CSS only. This is an offline compilation check, not proof that an ordinary build or real font rendering passes. No app font code, provider config, or CI config was changed. Do not deploy the supplementary build output.
 - Next reported existing Auth.js/jose Edge Runtime warnings. Mastra's default unconfigured registry emits an in-memory fallback warning during build; the new workflow explicitly refuses that fallback, as covered by regression, and the beta runtime uses real MongoDBStore.
 - `git diff --check`: passed.
 
 No push, PR creation/approval, merge, deployment, staging mutation, or live effect occurred. CI, protected Preview smoke, and replica-set failover remain unverified. The normal build's font-network failure remains an environment blocker. The code is prepared for local review; do not describe issue #27's protected-staging acceptance gate as complete.
+
+## Final independent review
+
+A fresh reviewer inspected commit `11b6b0de2a391e45f86f5b0bc78995b850a22bb7` and found no blocking duplicate-effect, tenant-isolation, Mongo-persistence, or live-provider defect. One minor API correctness issue was found: denial's pending-state compare-and-set could lose to an approval claim and report HTTP 404 for an existing gate. A regression reproduced that response; the follow-up changes it to HTTP 409. The initial tenant-scoped not-found response remains 404.
+
+The reviewer also qualified the earlier gate-creation crash evidence: it replayed a completed domain step rather than killing that exact process window. The new `crash-workflow` phase closes that evidence gap with an actual SIGKILL. The reviewer inspected this follow-up, found no new issues, and independently ran six focused files / 25 tests successfully, including the new HTTP 409 regression. Full verification was rerun: installation, lint, typecheck, and 249 tests passed; the real Mongo driver passed all five phases. The ordinary build still fails on the environment's blocked Google Fonts requests; supplementary font-mocked compilation is reported separately above.
+
+Exact runtime versions: Node 24.19.0; npm 11.9.0; MongoDB 7.0.45; Mongoose 9.9.2; Mastra core 1.57.0; Mastra MongoDB adapter 1.16.0; Vitest 4.1.10; Next 15.5.23. Docker image `mongo:7` resolved to image ID `sha256:bf46c3fd4f186a3569a6c8d180ee6f55e46cc81e98c0cadaee2f56718c84979f`.
+
+Independent focused command:
+
+```sh
+npm test -- --run src/lib/policy-gates/approval-safety.test.ts src/lib/policy-gates/policy-gates-api.test.ts src/lib/policy-gates/get-policy-gate-service.test.ts src/lib/policy-gates/request-replay.test.ts src/lib/client-pipeline/beta-workflow-api.test.ts src/mastra/index.test.ts
+```
+
+The local database inspection confirms actual `mastra_workflow_snapshot` documents for `client-pipeline`: run-39, run-45, run-70, and missing-email are successful; run-40 and run-69 remain suspended; crashed-workflow remains running and blocked for review. The separate admission collection agrees. There are 13 policy gates and four recorded synthetic fake effects. The crash-before-effect and crash-after-effect gates both remain claimed; their `effectRan=false` values do not license a retry.

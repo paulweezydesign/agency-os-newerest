@@ -227,3 +227,31 @@ it("records the authenticated decision actor despite a caller override", async (
   expect(result.status).toBe(200);
   expect(result.body).toMatchObject({ decidedBy: "agent-operator:user-1" });
 });
+
+it("returns conflict when denial loses a race to an approval claim", async () => {
+  const repository = createInMemoryPolicyGateRepository();
+  const service = createPolicyGateService(
+    repository,
+    createInMemoryAgentActionLogRepository(),
+    async () => undefined,
+  );
+  const gate = await service.request({
+    tenantId: "tenant-default",
+    actionType: "client_email",
+    payload: { to: "lead@example.test" },
+    requestedBy: "test",
+    correlationId: "race-test",
+  });
+  const applyDecision = repository.applyDecision;
+  repository.applyDecision = async (tenantId, id, decision) => {
+    await repository.claim(tenantId, id, "other-operator", "winning-claim");
+    return applyDecision(tenantId, id, decision);
+  };
+  const result = await handleDecidePolicyGate({
+    session: operatorSession,
+    service,
+    gateId: gate.id,
+    body: { decision: "deny" },
+  });
+  expect(result.status).toBe(409);
+});

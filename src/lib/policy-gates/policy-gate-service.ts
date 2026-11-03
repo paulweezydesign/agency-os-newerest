@@ -211,7 +211,8 @@ export const createPolicyGateService = (
     });
 
     if (!gate) {
-      throw new PolicyGateNotFoundError();
+      // The tenant-scoped lookup succeeded; a concurrent decision won the CAS.
+      throw new PolicyGateNotPendingError();
     }
 
     await actionLogs.append({
