@@ -25,6 +25,7 @@ export const policyGateSchema = z.object({
   decidedBy: z.string().optional(),
   correlationId: z.string().min(1),
   effectRan: z.boolean(),
+  workflowRunId: z.string().optional(),
   executionState: z.enum(["claimed", "uncertain", "completed"]).optional(),
   dryRun: z.boolean().optional(),
   requestKey: z.string().min(1).optional(),
@@ -58,3 +59,15 @@ export type RequestPolicyGateInput = z.infer<
   typeof requestPolicyGateInputSchema
 >;
 export type DecidePolicyGateInput = z.infer<typeof decidePolicyGateInputSchema>;
+
+/** Historical markers are evidence to block generic effects, not authority to
+ * migrate an old gate into the foundation receipt protocol. */
+export const historicalGateBlockReason = (gate: Pick<PolicyGate, "dryRun" | "workflowRunId" | "executionState" | "payload" | "status" | "effectRan" | "effectStatus">): string | null => {
+  if (gate.executionState !== undefined) return "Historical execution requires reconciliation; no decision or effect was performed.";
+  if (!gate.dryRun && (gate.workflowRunId !== undefined || gate.payload.executionMode === "dry-run")) {
+    return gate.status === "pending" && !gate.effectRan && (!gate.effectStatus || gate.effectStatus === "idle")
+      ? "Historical synthetic gate is undecided; format review is required before a decision. No effect was performed."
+      : "Historical synthetic outcome requires reconciliation; no decision or effect was performed.";
+  }
+  return null;
+};

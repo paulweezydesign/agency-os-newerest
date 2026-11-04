@@ -16,6 +16,7 @@ const toPolicyGate = (doc: {
   decidedBy?: string | null;
   correlationId: string;
   effectRan: boolean;
+  workflowRunId?: string | null;
   executionState?: string | null;
   dryRun?: boolean | null;
   requestKey?: string | null;
@@ -35,6 +36,7 @@ const toPolicyGate = (doc: {
   decidedBy: doc.decidedBy ?? undefined,
   correlationId: doc.correlationId,
   effectRan: doc.effectRan,
+  workflowRunId: doc.workflowRunId ?? undefined,
   executionState: doc.executionState as PolicyGate["executionState"] ?? undefined,
   dryRun: doc.dryRun ?? false,
   requestKey: doc.requestKey ?? undefined,
@@ -105,7 +107,9 @@ export const createMongoosePolicyGateRepository = (): PolicyGateRepository => ({
     }
     const doc = await model
       .findOneAndUpdate(
-        { _id: id, tenantId, status: "pending", executionState: { $exists: false } },
+        { _id: id, tenantId, status: "pending", executionState: { $exists: false },
+          $or: [{ dryRun: true }, { workflowRunId: { $exists: false }, "payload.executionMode": { $ne: "dry-run" } }],
+        },
         {
           status: decision.status,
           decidedBy: decision.decidedBy,

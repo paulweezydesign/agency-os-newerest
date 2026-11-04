@@ -3,6 +3,7 @@ import { ZodError, z } from "zod";
 import { resolveOperatorApiAccess } from "@/lib/auth/operator-api-access";
 import type { AuthSession } from "@/lib/auth/session-context";
 import {
+  HistoricalPolicyGateError,
   PolicyGateNotFoundError,
   PolicyGateNotPendingError,
   PolicyGateExecutionError,
@@ -121,6 +122,9 @@ export const handleRequestPolicyGate = async ({
     if (error instanceof PolicyGateRequestConflictError) {
       return { status: 409, body: { error: error.message } };
     }
+    if (error instanceof HistoricalPolicyGateError) {
+      return { status: 409, body: { error: error.message } };
+    }
     if (error instanceof ZodError) {
       return { status: 400, body: { error: "Invalid request" } };
     }
@@ -181,6 +185,9 @@ export const handleDecidePolicyGate = async ({
     }
     if (error instanceof PolicyGateNotFoundError) {
       return { status: 404, body: { error: "Policy gate not found" } };
+    }
+    if (error instanceof HistoricalPolicyGateError) {
+      return { status: 409, body: { error: error.message } };
     }
     if (error instanceof PolicyGateNotPendingError) {
       return { status: 409, body: { error: "Policy gate already decided" } };

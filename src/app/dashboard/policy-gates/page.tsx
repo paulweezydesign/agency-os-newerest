@@ -1,3 +1,4 @@
+import { historicalGateBlockReason } from "@/lib/policy-gates/schemas";
 import { createMongoosePolicyGateRepository } from "@/lib/policy-gates/mongoose-policy-gate-repository";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -95,7 +96,7 @@ const PolicyGatesPage = async ({ searchParams }: { searchParams: Promise<{ gateI
                   {JSON.stringify(gate.payload, null, 2)}
                 </pre>
                 <div className="mt-3">
-                  {gate.executionState ? <p role="status">Legacy execution {gate.executionState}; blocked for reconciliation.</p> : <PolicyGateDecisionButtons gateId={gate.id} />}
+                  {historicalGateBlockReason(gate) ? <p role="status">{historicalGateBlockReason(gate)}</p> : <PolicyGateDecisionButtons gateId={gate.id} />}
                 </div>
               </li>
             ))}
@@ -117,9 +118,10 @@ const PolicyGatesPage = async ({ searchParams }: { searchParams: Promise<{ gateI
               >
                 {gate.status} · {gate.actionType} · decided by{" "}
                 {gate.decidedBy ?? "unknown"}
+                {historicalGateBlockReason(gate) ? <p role="status">{historicalGateBlockReason(gate)}</p> : null}
                 {gate.dryRun ? " · dry run" : ""}
                 {` · execution: ${gate.effectStatus ?? (gate.effectRan ? "succeeded" : "idle")}`}
-                {!gate.executionState && gate.dryRun && gate.status === "approved" && gate.effectStatus !== "succeeded" ?
+                {!historicalGateBlockReason(gate) && gate.dryRun && gate.status === "approved" && gate.effectStatus !== "succeeded" ?
                   <div className="mt-2"><PolicyGateDecisionButtons gateId={gate.id} recovery /></div> : null}
               </li>
             ))}

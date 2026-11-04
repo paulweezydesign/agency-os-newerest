@@ -1,3 +1,4 @@
+import { historicalGateBlockReason } from "./schemas";
 import { randomUUID } from "node:crypto";
 import type {
   PolicyGate,
@@ -81,7 +82,7 @@ export const createInMemoryPolicyGateRepository = (): PolicyGateRepository => {
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     applyDecision: async (tenantId, id, decision) => {
       const gate = gates.find(
-        (entry) => entry.tenantId === tenantId && entry.id === id && entry.status === "pending" && entry.executionState === undefined,
+        (entry) => entry.tenantId === tenantId && entry.id === id && entry.status === "pending" && historicalGateBlockReason(entry) === null,
       );
       if (!gate) {
         return null;

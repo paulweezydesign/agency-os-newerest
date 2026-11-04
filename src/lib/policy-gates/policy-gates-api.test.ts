@@ -249,3 +249,11 @@ describe("handleListPolicyGates", () => {
     expect(listed.body[0]?.tenantId).toBe("tenant-default");
   });
 });
+
+it("rejects historical-format synthetic requests with a deliberate API conflict", async () => {
+  const { service } = createService();
+  const response = await handleRequestPolicyGate({ session: operatorSession, service,
+    body: { actionType: "client_email", payload: { to: "legacy@example.test", executionMode: "dry-run" } } });
+  expect(response).toMatchObject({ status: 409, body: { error: expect.stringContaining("explicit dryRun") } });
+  expect(await service.list("tenant-default")).toHaveLength(0);
+});

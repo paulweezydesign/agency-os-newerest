@@ -20,6 +20,7 @@ const policyGateSchema = new Schema(
     decidedBy: { type: String, required: false },
     correlationId: { type: String, required: true },
     // Read old operator-branch claims conservatively; never re-claim these rows.
+    workflowRunId: { type: String },
     executionState: { type: String, enum: ["claimed", "uncertain", "completed"] },
     effectRan: { type: Boolean, required: true, default: false },
     dryRun: { type: Boolean, default: false },

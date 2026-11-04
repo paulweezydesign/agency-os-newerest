@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from "node:util";
 import type { SlackNotifier } from "@/lib/slack/notify";
 import type { PolicyGateRepository } from "./policy-gate-repository";
 import {
+  historicalGateBlockReason,
   decidePolicyGateInputSchema,
   requestPolicyGateInputSchema,
   type PolicyGate,
@@ -23,6 +24,14 @@ export class PolicyGateNotPendingError extends Error {
     this.name = "PolicyGateNotPendingError";
   }
 }
+
+export class HistoricalPolicyGateError extends Error {
+  constructor(message: string) { super(message); this.name = "HistoricalPolicyGateError"; }
+}
+const assertSupportedGate = (gate: PolicyGate) => {
+  const reason = historicalGateBlockReason(gate);
+  if (reason) throw new HistoricalPolicyGateError(reason);
+};
 
 export class PolicyGateExecutionError extends Error {
   constructor(readonly recoverable: boolean, cause: unknown) {
@@ -107,6 +116,9 @@ export const createPolicyGateService = (
       dryRun,
       requestKey,
     });
+    if (!parsed.dryRun && parsed.payload.executionMode === "dry-run") {
+      throw new HistoricalPolicyGateError("Synthetic requests must use the explicit dryRun receipt protocol.");
+    }
     if (parsed.dryRun) validateDryRun(parsed);
 
     const gate = await repository.create({
@@ -125,6 +137,7 @@ export const createPolicyGateService = (
       throw new PolicyGateRequestConflictError();
     }
 
+    assertSupportedGate(gate);
     await actionLogs.append({
       tenantId,
       agentName: requestedBy,
@@ -158,6 +171,7 @@ export const createPolicyGateService = (
     if (!existing) {
       throw new PolicyGateNotFoundError();
     }
+    assertSupportedGate(existing);
     const correlationId = existing.correlationId;
 
     if (existing.status !== "pending" || existing.executionState !== undefined) {
@@ -225,6 +239,7 @@ export const createPolicyGateService = (
     if (!existing) {
       throw new PolicyGateNotFoundError();
     }
+    assertSupportedGate(existing);
     const correlationId = existing.correlationId;
 
     if (existing.status !== "pending" || existing.executionState !== undefined) {
@@ -266,6 +281,7 @@ export const createPolicyGateService = (
   recover: async ({ tenantId, gateId, decidedBy, correlationId: decisionCorrelationId }) => {
     const existing = await repository.getByTenantAndId(tenantId, gateId);
     if (!existing) throw new PolicyGateNotFoundError();
+    assertSupportedGate(existing);
     const correlationId = existing.correlationId;
     if (!existing.dryRun || existing.status !== "approved" || existing.executionState !== undefined) {
       throw new PolicyGateNotPendingError("Only an approved dry-run effect can be recovered");
