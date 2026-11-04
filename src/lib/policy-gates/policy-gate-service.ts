@@ -160,7 +160,7 @@ export const createPolicyGateService = (
     }
     const correlationId = existing.correlationId;
 
-    if (existing.status !== "pending") {
+    if (existing.status !== "pending" || existing.executionState !== undefined) {
       throw new PolicyGateNotPendingError(
         `Policy gate is already ${existing.status}`,
       );
@@ -227,7 +227,7 @@ export const createPolicyGateService = (
     }
     const correlationId = existing.correlationId;
 
-    if (existing.status !== "pending") {
+    if (existing.status !== "pending" || existing.executionState !== undefined) {
       throw new PolicyGateNotPendingError(
         `Policy gate is already ${existing.status}`,
       );
@@ -267,7 +267,7 @@ export const createPolicyGateService = (
     const existing = await repository.getByTenantAndId(tenantId, gateId);
     if (!existing) throw new PolicyGateNotFoundError();
     const correlationId = existing.correlationId;
-    if (!existing.dryRun || existing.status !== "approved") {
+    if (!existing.dryRun || existing.status !== "approved" || existing.executionState !== undefined) {
       throw new PolicyGateNotPendingError("Only an approved dry-run effect can be recovered");
     }
     validateDryRun(existing);

@@ -14,7 +14,7 @@ import { createMongoosePolicyGateRepository } from "@/lib/policy-gates/mongoose-
 import { createPolicyGateService } from "@/lib/policy-gates/policy-gate-service";
 import { getPolicyGateModel } from "@/lib/policy-gates/policy-gate-model";
 import { handleDecidePolicyGate } from "@/lib/policy-gates/policy-gates-api";
-import { executeClientPipelineWorkflow, getClientPipelineWorkflowRun } from "@/lib/client-pipeline/workflow-service";
+import { executeClientPipelineWorkflow, getClientPipelineWorkflowRun, resumeClientPipelineWorkflow } from "@/lib/client-pipeline/workflow-service";
 import { getClientPipelineRunModel } from "@/lib/client-pipeline/workflow-model";
 import { handleRunWorkflow } from "@/lib/client-pipeline/workflow-api";
 
@@ -31,7 +31,7 @@ const gates = () => createPolicyGateService(createMongoosePolicyGateRepository()
 const decision = (gateId: string, correlationId: string = randomUUID()) => ({
   tenantId, gateId, correlationId, decidedBy: "synthetic-operator",
 });
-const request = (requestKey = randomUUID()) => gates().request({
+const request = (requestKey: string = randomUUID()) => gates().request({
   tenantId, actionType: "client_email", payload: { to: "lead@example.test" },
   requestedBy: "synthetic-operator", correlationId: randomUUID(), dryRun: true, requestKey,
 });
@@ -130,21 +130,18 @@ describe.skipIf(!uri || Boolean(restartFixture))("MongoDB lead workflow acceptan
       .rejects.toMatchObject({ status: 409 });
   }, 30_000);
 
-  it("re-enters a workflow after a lost result checkpoint without duplicating its approved gate", async () => {
+  it("blocks engine replay after a lost application checkpoint", async () => {
     const input = await lead(70);
     const first = await executeClientPipelineWorkflow(input);
     const approved = await gates().approve(decision(first.gates[0].id));
-    // Model a process dying after the domain action but before saving its result.
     await getClientPipelineRunModel().updateOne({ tenantId, runId: input.runId }, {
-      $unset: { result: 1 }, $set: { status: "failed", lastErrorCode: "INJECTED_LOST_CHECKPOINT" },
+      $unset: { result: 1 }, $set: { status: "failed", engineState: "uncertain", lastErrorCode: "INJECTED_LOST_CHECKPOINT" },
     });
-    const recovered = await executeClientPipelineWorkflow(input);
-    expect(recovered.status).toBe("completed");
-    expect(recovered.gates).toHaveLength(1);
-    expect(recovered.gates[0].id).toBe(approved.id);
-    expect(recovered.gates[0].effectReceipt).toEqual(approved.effectReceipt);
+    const blocked = await executeClientPipelineWorkflow(input);
+    expect(blocked.engineState).toBe("uncertain");
+    await expect(resumeClientPipelineWorkflow(tenantId, input.clientId, input.runId)).rejects.toMatchObject({ status: 409 });
     expect(await getPolicyGateModel().countDocuments({ tenantId, requestKey: `client-pipeline:${input.runId}` })).toBe(1);
-    expect((await clients().get(tenantId, input.clientId))?.pipelineStage).toBe("onboard");
+    expect((await gates().list(tenantId)).find((gate) => gate.id === approved.id)?.effectReceipt).toEqual(approved.effectReceipt);
   });
 
   it("rejects legacy pipeline writes to a workflow-owned Client", async () => {
@@ -204,7 +201,7 @@ describe.skipIf(!uri || Boolean(restartFixture))("MongoDB lead workflow acceptan
     const input = await lead(70);
     await getClientPipelineRunModel().create({ tenantId, runId: input.runId,
       clientId: input.clientId, correlationId: input.correlationId, mastraRunId: "interrupted-before-reservation",
-      input, contactEmail: "lead@example.test", status: "running", checkpoints: ["input-persisted"] });
+      input, contactEmail: "lead@example.test", status: "running", engineVersion: 1, engineState: "idle", checkpoints: ["input-persisted"] });
     const legacy = await getClientService();
     await legacy.updatePipeline(tenantId, input.clientId, {
       pipelineStage: "nurture", leadScore: 45, contactEmail: "changed@example.test",
@@ -220,7 +217,7 @@ describe.skipIf(!uri || Boolean(restartFixture))("MongoDB lead workflow acceptan
     const input = await lead(70);
     await getClientPipelineRunModel().create({ tenantId, runId: input.runId,
       clientId: input.clientId, correlationId: input.correlationId, mastraRunId: "interrupted-before-reservation",
-      input, contactEmail: "lead@example.test", status: "running", checkpoints: ["input-persisted"] });
+      input, contactEmail: "lead@example.test", status: "running", engineVersion: 1, engineState: "idle", checkpoints: ["input-persisted"] });
     const run = await executeClientPipelineWorkflow(input);
     expect(run.status).toBe("awaiting_approval");
     expect(run.gates).toHaveLength(1);
@@ -361,6 +358,52 @@ describe.skipIf(!uri || Boolean(restartFixture))("MongoDB lead workflow acceptan
     expect(await createMongoosePolicyGateRepository().getByTenantAndId(tenantId, gate.id))
       .toMatchObject({ decidedBy: `agent-operator:${session.user.id}` });
   });
+  it("preserves approval receipt despite audit append failure", async () => {
+    const gate = await request();
+    const failingLogs = { ...logs(), append: async () => { throw new Error("Audit unavailable"); } };
+    const service = createPolicyGateService(createMongoosePolicyGateRepository(), failingLogs, noExternalEffect);
+    await expect(service.approve(decision(gate.id))).rejects.toThrow();
+    const saved = await createMongoosePolicyGateRepository().getByTenantAndId(tenantId, gate.id);
+    expect(saved).toMatchObject({ status: "approved", effectRan: true, effectReceipt: { mode: "dry-run" } });
+    await expect(gates().approve(decision(gate.id))).rejects.toThrow();
+    expect(noExternalEffect).not.toHaveBeenCalled();
+  });
+  it("does not execute after a claim commits but its response is lost", async () => {
+    const gate = await request();
+    const repo = createMongoosePolicyGateRepository();
+    const service = createPolicyGateService({ ...repo, applyDecision: async (...args) => {
+      await repo.applyDecision(...args); throw new Error("Claim response lost");
+    } }, logs(), noExternalEffect);
+    await expect(service.approve(decision(gate.id))).rejects.toThrow();
+    expect(await repo.getByTenantAndId(tenantId, gate.id)).toMatchObject({ status: "approved", effectRan: false, effectStatus: "running" });
+    await expect(gates().deny(decision(gate.id))).rejects.toThrow();
+    await gates().recover(decision(gate.id));
+    expect((await repo.getByTenantAndId(tenantId, gate.id))?.effectReceipt?.mode).toBe("dry-run");
+    expect(noExternalEffect).not.toHaveBeenCalled();
+  });
+  it("blocks a generic effect after success but completion persistence failure", async () => {
+    const runner = vi.fn(async () => ({ synthetic: true }));
+    const repo = createMongoosePolicyGateRepository();
+    const service = createPolicyGateService({ ...repo, completeEffect: async () => { throw new Error("Write failed"); } }, logs(), runner);
+    const gate = await service.request({ tenantId, actionType: "client_email", payload: { to: "generic@example.test" }, requestedBy: "test", correlationId: randomUUID() });
+    await expect(service.approve(decision(gate.id))).rejects.toThrow();
+    expect(await repo.getByTenantAndId(tenantId, gate.id)).toMatchObject({ status: "approved", effectRan: false, effectStatus: "unknown" });
+    await expect(gates().approve(decision(gate.id))).rejects.toThrow();
+    await expect(gates().recover(decision(gate.id))).rejects.toThrow();
+    expect(runner).toHaveBeenCalledTimes(1);
+  });
+  it("preserves foundation-era random gate IDs and receipts on request replay", async () => {
+    const requestKey = `client-pipeline:${randomUUID()}`;
+    const model = getPolicyGateModel();
+    const original = await model.create({ tenantId, requestKey, dryRun: true, actionType: "client_email", status: "pending", effectRan: false, effectStatus: "idle", payload: { to: "lead@example.test" }, requestedBy: "old-operator", correlationId: "old-correlation" });
+    expect((await request(requestKey)).id).toBe(original._id.toString());
+    const approved = await gates().approve(decision(original._id.toString()));
+    const replay = await request(requestKey);
+    expect(replay.id).toBe(approved.id);
+    expect(replay.effectReceipt).toEqual(approved.effectReceipt);
+    expect(await model.countDocuments({ tenantId, requestKey })).toBe(1);
+  });
+
 });
 
 describe.skipIf(!uri || !restartFixture)("MongoDB fresh process recovery", () => {
@@ -374,8 +417,11 @@ describe.skipIf(!uri || !restartFixture)("MongoDB fresh process recovery", () =>
     try {
       await mongoose.connect(uri!, { serverSelectionTimeoutMS: 5000 });
       const before = await getClientPipelineWorkflowRun(fixture.tenantId, fixture.runId);
-      const after = await executeClientPipelineWorkflow(fixture);
-      expect(before?.status).toBe("completed");
+      expect(before?.engineState).toBe("suspended");
+      const routingBefore = await logs().listByCorrelationId(fixture.tenantId, fixture.correlationId);
+      const after = await resumeClientPipelineWorkflow(fixture.tenantId, fixture.clientId, fixture.runId);
+      expect((await logs().listByCorrelationId(fixture.tenantId, fixture.correlationId)).filter((log) => log.toolName === "clientPipeline.workflow.scored-and-routed")).toHaveLength(routingBefore.filter((log) => log.toolName === "clientPipeline.workflow.scored-and-routed").length);
+      expect(after.engineState).toBe("success");
       expect(after.status).toBe("completed");
       expect(after.gates[0].id).toBe(fixture.gateId);
       expect(after.gates[0].effectReceipt).toEqual(fixture.receipt);

@@ -25,6 +25,7 @@ export const policyGateSchema = z.object({
   decidedBy: z.string().optional(),
   correlationId: z.string().min(1),
   effectRan: z.boolean(),
+  executionState: z.enum(["claimed", "uncertain", "completed"]).optional(),
   dryRun: z.boolean().optional(),
   requestKey: z.string().min(1).optional(),
   effectStatus: z.enum(["idle", "running", "succeeded", "failed", "unknown"]).optional(),

@@ -81,7 +81,7 @@ export const createInMemoryPolicyGateRepository = (): PolicyGateRepository => {
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     applyDecision: async (tenantId, id, decision) => {
       const gate = gates.find(
-        (entry) => entry.tenantId === tenantId && entry.id === id && entry.status === "pending",
+        (entry) => entry.tenantId === tenantId && entry.id === id && entry.status === "pending" && entry.executionState === undefined,
       );
       if (!gate) {
         return null;

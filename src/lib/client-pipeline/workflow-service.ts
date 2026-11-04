@@ -1,3 +1,4 @@
+import { getPolicyGateModel } from "@/lib/policy-gates/policy-gate-model";
 import { createHash } from "node:crypto";
 import { connectMongo } from "@/lib/db/mongodb";
 import { getClientService } from "@/lib/clients/get-client-service";
@@ -9,6 +10,7 @@ import { createPolicyGateService } from "@/lib/policy-gates/policy-gate-service"
 import { createClientPipelineService } from "./client-pipeline-service";
 import { getClientPipelineRunModel, type ClientPipelineRunDocument } from "./workflow-model";
 import {
+  gateIsTerminal,
   pipelineResultSchema,
   workflowInputSchema,
   workflowRunSchema,
@@ -133,6 +135,8 @@ export const prepareClientPipelineWorkflow = async (
         input,
         contactEmail: client.contactEmail,
         status: "running",
+        engineVersion: 1,
+        engineState: "idle",
         checkpoints: ["input-persisted"],
       },
     }, { upsert: true, new: true }).exec();
@@ -227,7 +231,7 @@ export const completeClientPipelineWorkflow = async (
   }, {
     // BSON Mixed fields otherwise turn explicit undefined optionals into null,
     // which changes their domain meaning and cannot round-trip through Zod.
-    $set: { result: JSON.parse(JSON.stringify(result)), status: result.pendingEmailGates.length ? "awaiting_approval" : "completed" },
+    $set: { result: JSON.parse(JSON.stringify(result)), status: result.pendingEmailGates.length ? "awaiting_approval" : "running" },
     $unset: { lastErrorCode: "" },
     $addToSet: { checkpoints: "approval-boundary-persisted" },
   }).exec();
@@ -247,16 +251,14 @@ export const getClientPipelineWorkflowRun = async (
   if (!record) return null;
   const result = record.result ? pipelineResultSchema.parse(record.result) : undefined;
   const gateRepository = createMongoosePolicyGateRepository();
-  const gates = await Promise.all((result?.pendingEmailGates ?? []).map(async (gate) => {
+  const orphan = !result ? await getPolicyGateModel().findOne({ tenantId, requestKey: `client-pipeline:${runId}` }).exec() : null;
+  const gateRefs = result?.pendingEmailGates ?? (orphan ? [{ id: orphan._id.toString() }] : []);
+  const gates = await Promise.all(gateRefs.map(async (gate) => {
     const current = await gateRepository.getByTenantAndId(tenantId, gate.id);
     if (!current) throw new Error("Workflow approval record missing");
     return current;
   }));
-  let status = record.status;
-  if (result && gates.every((gate) => gate.status === "denied" || (gate.status === "approved" && gate.effectRan))) {
-    status = "completed";
-    await model.updateOne({ tenantId, runId }, { $set: { status } }).exec();
-  }
+  const status = record.status;
   return workflowRunSchema.parse({
     tenantId,
     runId,
@@ -264,6 +266,7 @@ export const getClientPipelineWorkflowRun = async (
     correlationId: record.correlationId,
     mastraRunId: record.mastraRunId,
     status,
+    engineState: record.engineState,
     checkpoints: record.checkpoints,
     result,
     gates,
@@ -271,41 +274,73 @@ export const getClientPipelineWorkflowRun = async (
   });
 };
 
-/** Runs real Mastra steps; Mongo application checkpoints are the recovery source
- * of truth. Engine-memory snapshots are not used as durable execution evidence. */
-export const executeClientPipelineWorkflow = async (
-  supplied: WorkflowInput,
-): Promise<WorkflowRun> => {
-  const input = workflowInputSchema.parse(supplied);
-  // Preflight preserves typed validation/conflict errors at the HTTP boundary.
-  const prepared = await prepareClientPipelineWorkflow(input);
-  if (prepared.cachedResult || prepared.input.operatorId !== input.operatorId) {
-    await createMongooseAgentActionLogRepository().append({
-      tenantId: input.tenantId,
-      agentName: input.operatorId,
-      toolName: "clientPipeline.workflow.reentered",
-      input: { runId: input.runId, clientId: input.clientId },
-      output: { originalOperatorId: prepared.input.operatorId, dryRun: true },
-      status: "success",
-      correlationId: prepared.input.correlationId,
-    });
-  }
-  if (prepared.cachedResult) {
-    const cached = await getClientPipelineWorkflowRun(input.tenantId, input.runId);
-    if (cached) return cached;
-  }
+
+/** The same PR30 admission owns both Client reservation and durable engine state. */
+const withEngine = async <T>(work: (workflow: ReturnType<typeof import("@/mastra/workflows/client-pipeline").createClientPipelineWorkflow>) => Promise<T>) => {
+  const { MongoDBStore } = await import("@mastra/mongodb");
+  const { default: mongoose } = await import("mongoose");
   const { createMastraApp } = await import("@/mastra");
-  const workflow = createMastraApp().getWorkflow("clientPipeline");
-  const run = await workflow.createRun({ runId: engineRunId(input) });
+  await connectMongo();
+  const storage = new MongoDBStore({ id: "agencyos-workflow-mongo", uri: process.env.MONGODB_URI!, dbName: mongoose.connection.db!.databaseName, options: { writeConcern: { w: "majority", j: true } } });
+  try { return await work(createMastraApp({ storage }).getWorkflow("clientPipeline")); }
+  finally { await storage.close(); }
+};
+
+const executeClaimedEngine = async (input: WorkflowInput, phase: "start" | "resume"): Promise<WorkflowRun> => {
+  const model = getClientPipelineRunModel();
   try {
-    const execution = await run.start({ inputData: prepared.input });
-    if (execution.status !== "success") throw new Error("Mastra workflow did not complete");
-    return workflowRunSchema.parse(execution.result);
+    await withEngine(async (workflow) => {
+      const run = await workflow.createRun({ runId: engineRunId(input), resourceId: input.tenantId });
+      const execution = phase === "start"
+        ? await run.start({ inputData: input })
+        : await run.resume({ step: "human-approval", resumeData: {} });
+      if (execution.status !== "success" && execution.status !== "suspended") throw new Error("Engine outcome is not resumable");
+      const snapshot = await workflow.getWorkflowRunById(engineRunId(input));
+      if (!snapshot || snapshot.status !== execution.status) throw new Error("Durable engine snapshot unconfirmed");
+      const updated = await model.updateOne({ ...key(input), engineState: "running" }, {
+        $set: { engineState: execution.status, status: execution.status === "success" ? "completed" : "awaiting_approval" },
+        $unset: { lastErrorCode: "" },
+      }).exec();
+      if (updated.matchedCount !== 1) throw new Error("Engine admission changed");
+    });
+    const record = await getClientPipelineWorkflowRun(input.tenantId, input.runId);
+    if (!record) throw new Error("Workflow missing");
+    return record;
   } catch (error) {
-    await getClientPipelineRunModel().updateOne({ ...key(input), result: { $exists: false } }, {
-      $set: { status: "failed", lastErrorCode: "WORKFLOW_EXECUTION_FAILED" },
-      $addToSet: { checkpoints: "execution-failed" },
-    }).exec();
+    await model.updateOne({ ...key(input), engineState: "running" }, {
+      $set: { engineState: "uncertain", status: "failed", lastErrorCode: "ENGINE_OUTCOME_UNCONFIRMED" },
+    }).exec().catch(() => undefined);
     throw error;
   }
+};
+
+export const executeClientPipelineWorkflow = async (supplied: WorkflowInput): Promise<WorkflowRun> => {
+  const input = workflowInputSchema.parse(supplied);
+  const prepared = await prepareClientPipelineWorkflow(input);
+  const model = getClientPipelineRunModel();
+  const claimed = await model.findOneAndUpdate({ ...key(input), engineVersion: 1, engineState: "idle" },
+    { $set: { engineState: "running" } }, { new: true }).exec();
+  if (!claimed) {
+    const record = await getClientPipelineWorkflowRun(input.tenantId, input.runId);
+    if (!record) throw new Error("Workflow missing");
+    // Replays inspect existing execution. Never run.start again after a claim.
+    return record;
+  }
+  return executeClaimedEngine(prepared.input, "start");
+};
+
+export const resumeClientPipelineWorkflow = async (tenantId: string, clientId: string, runId: string): Promise<WorkflowRun> => {
+  const current = await getClientPipelineWorkflowRun(tenantId, runId);
+  if (!current || current.clientId !== clientId) throw new WorkflowRequestError(404, "Workflow run not found");
+  if (current.engineState !== "suspended" || !current.result || !current.gates.every(gateIsTerminal)) {
+    throw new WorkflowRequestError(409, "Workflow is not safely resumable; inspect or explicitly recover its dry-run gate");
+  }
+  await withEngine(async (workflow) => {
+    const snapshot = await workflow.getWorkflowRunById(current.mastraRunId);
+    if (!snapshot || snapshot.status !== "suspended") throw new WorkflowRequestError(409, "Suspended engine snapshot unavailable");
+  });
+  const claimed = await getClientPipelineRunModel().findOneAndUpdate({ tenantId, clientId, runId, engineVersion: 1, engineState: "suspended" },
+    { $set: { engineState: "running" } }, { new: true }).exec();
+  if (!claimed) throw new WorkflowRequestError(409, "Workflow already claimed or blocked");
+  return executeClaimedEngine(workflowInputSchema.parse(claimed.input), "resume");
 };

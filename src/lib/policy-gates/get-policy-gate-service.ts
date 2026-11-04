@@ -18,22 +18,15 @@ import {
 export const getPolicyGateService = async (): Promise<PolicyGateService> => {
   await connectMongo();
   const actionLogs = createMongooseAgentActionLogRepository();
-  const notifier = createSlackNotifier({
-    slack: getSlackClient(),
-    actionLogs,
-  });
-  const base = createResendAwareEffectRunner(
-    getSharedDemoEffectStore(),
-    getResendClient(),
-  );
-
+  // Provider construction is lazy: persisted dryRun gates never touch factories,
+  // even when credentials exist. The domain service decides from persisted mode.
   return createPolicyGateService(
     createMongoosePolicyGateRepository(),
     actionLogs,
-    createStripeAwareEffectRunner({
-      base,
+    async (input) => createStripeAwareEffectRunner({
+      base: createResendAwareEffectRunner(getSharedDemoEffectStore(), getResendClient()),
       stripe: getStripeClient(),
-    }),
-    notifier,
+    })(input),
+    { notifyPolicyGate: async (input) => createSlackNotifier({ slack: getSlackClient(), actionLogs }).notifyPolicyGate(input) },
   );
 };

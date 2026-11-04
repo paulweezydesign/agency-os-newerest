@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
-import { handleReadWorkflow, handleRunWorkflow, isWorkflowEnabled } from "@/lib/client-pipeline/workflow-api";
-import { executeClientPipelineWorkflow, getClientPipelineWorkflowRun } from "@/lib/client-pipeline/workflow-service";
+import { handleReadWorkflow, handleWorkflowOperation, isWorkflowEnabled } from "@/lib/client-pipeline/workflow-api";
+import { executeClientPipelineWorkflow, getClientPipelineWorkflowRun, resumeClientPipelineWorkflow } from "@/lib/client-pipeline/workflow-service";
 
 export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ clientId: string }> };
 
 export const POST = async (request: Request, context: RouteContext) => {
   const { clientId } = await context.params;
-  const result = await handleRunWorkflow({
+  const result = await handleWorkflowOperation({
     session: toAuthSession(await auth()), enabled: isWorkflowEnabled(), clientId,
     body: await request.json().catch(() => null), execute: executeClientPipelineWorkflow,
+    read: getClientPipelineWorkflowRun, resume: resumeClientPipelineWorkflow,
   });
   return NextResponse.json(result.body, { status: result.status });
 };

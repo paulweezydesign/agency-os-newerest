@@ -41,6 +41,7 @@ export const workflowRunSchema = z.object({
   correlationId: z.string(),
   mastraRunId: z.string(),
   status: z.enum(["running", "awaiting_approval", "completed", "failed"]),
+  engineState: z.enum(["idle", "running", "suspended", "success", "uncertain"]).optional(),
   checkpoints: z.array(z.string()),
   result: pipelineResultSchema.optional(),
   gates: z.array(policyGateSchema),
@@ -51,3 +52,9 @@ export type WorkflowInput = z.infer<typeof workflowInputSchema>;
 export type WorkflowPrepared = z.infer<typeof workflowPreparedSchema>;
 export type WorkflowRouted = z.infer<typeof workflowRoutedSchema>;
 export type WorkflowRun = z.infer<typeof workflowRunSchema>;
+
+// The PR30 fake effect is the receipt itself. Approval alone is not completion.
+export const gateIsTerminal = (gate: z.infer<typeof policyGateSchema>) =>
+  gate.executionState === undefined && (gate.status === "denied" || (gate.status === "approved" && gate.dryRun === true &&
+    gate.effectRan && gate.effectStatus === "succeeded" &&
+    gate.effectReceipt?.mode === "dry-run" && gate.effectReceipt.key === `policy-gate:${gate.id}`));

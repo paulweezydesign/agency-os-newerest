@@ -1,3 +1,4 @@
+import type { MastraCompositeStore } from "@mastra/core/storage";
 import { Mastra } from "@mastra/core";
 import {
   createProjectManagerAgent,
@@ -10,6 +11,7 @@ import { createProjectManagerTaskTools } from "./tools/task-tools";
 import { createClientPipelineWorkflow } from "./workflows/client-pipeline";
 
 export type CreateMastraAppOptions = {
+  storage?: MastraCompositeStore;
   projectManagerDeps?: ProjectManagerAgentDeps;
 };
 
@@ -26,6 +28,7 @@ export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
       agents: {},
       tools: {},
       workflows,
+      storage: options.storage,
     });
   }
 
@@ -50,6 +53,7 @@ export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
     },
     tools,
     workflows,
+    storage: options.storage,
   });
 };
 

@@ -1,3 +1,4 @@
+import { createMongoosePolicyGateRepository } from "@/lib/policy-gates/mongoose-policy-gate-repository";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -11,7 +12,7 @@ import { RequestClientEmailForm } from "./request-client-email-form";
 
 export const dynamic = "force-dynamic";
 
-const PolicyGatesPage = async () => {
+const PolicyGatesPage = async ({ searchParams }: { searchParams: Promise<{ gateId?: string }> }) => {
   const authSession = toAuthSession(await auth());
   const context = getSessionContext(authSession);
   const access = resolveDashboardAccess(context);
@@ -27,6 +28,11 @@ const PolicyGatesPage = async () => {
     pendingOnly: false,
   });
   const gates = listed.status === 200 ? listed.body : [];
+  const { gateId } = await searchParams;
+  if (gateId && listed.status === 200 && !gates.some((gate) => gate.id === gateId)) {
+    const selected = await createMongoosePolicyGateRepository().getByTenantAndId(context!.tenantId, gateId);
+    if (selected) gates.unshift(selected);
+  }
   const pending = gates.filter((gate) => gate.status === "pending");
   const decided = gates.filter((gate) => gate.status !== "pending");
 
@@ -77,6 +83,7 @@ const PolicyGatesPage = async () => {
             {pending.map((gate) => (
               <li
                 key={gate.id}
+                id={`gate-${gate.id}`}
                 className="rounded-md border border-slate-200 px-4 py-3"
               >
                 <p className="font-medium text-slate-900">{gate.actionType}{gate.dryRun ? " · dry run, zero sends" : ""}</p>
@@ -88,7 +95,7 @@ const PolicyGatesPage = async () => {
                   {JSON.stringify(gate.payload, null, 2)}
                 </pre>
                 <div className="mt-3">
-                  <PolicyGateDecisionButtons gateId={gate.id} />
+                  {gate.executionState ? <p role="status">Legacy execution {gate.executionState}; blocked for reconciliation.</p> : <PolicyGateDecisionButtons gateId={gate.id} />}
                 </div>
               </li>
             ))}
@@ -105,13 +112,14 @@ const PolicyGatesPage = async () => {
             {decided.map((gate) => (
               <li
                 key={gate.id}
+                id={`gate-${gate.id}`}
                 className="rounded-md border border-slate-100 px-3 py-2 text-sm text-slate-700"
               >
                 {gate.status} · {gate.actionType} · decided by{" "}
                 {gate.decidedBy ?? "unknown"}
                 {gate.dryRun ? " · dry run" : ""}
                 {` · execution: ${gate.effectStatus ?? (gate.effectRan ? "succeeded" : "idle")}`}
-                {gate.dryRun && gate.status === "approved" && gate.effectStatus !== "succeeded" ?
+                {!gate.executionState && gate.dryRun && gate.status === "approved" && gate.effectStatus !== "succeeded" ?
                   <div className="mt-2"><PolicyGateDecisionButtons gateId={gate.id} recovery /></div> : null}
               </li>
             ))}

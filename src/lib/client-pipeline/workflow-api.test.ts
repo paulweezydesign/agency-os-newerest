@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handleRunWorkflow, handleReadWorkflow, isWorkflowEnabled } from "./workflow-api";
+import { handleRunWorkflow, handleWorkflowOperation, handleReadWorkflow, isWorkflowEnabled } from "./workflow-api";
 
 const session = { user: { id: "operator", tenantId: "tenant-a", role: "agent-operator" } };
 const body = { runId: "d6618944-f3bc-42ef-9d44-68f925475be7", leadScore: 70 };
@@ -42,4 +42,30 @@ describe("protected synthetic workflow API", () => {
     expect(deps.read).toHaveBeenCalledWith("tenant-a", body.runId);
     expect(result).toEqual({ status: 404, body: { error: "Workflow run not found" } });
   });
+});
+
+it.each([null, { user: { ...session.user, role: "client" } }])("guards inspect and resume before storage", async (identity) => {
+  for (const operation of ["inspect", "resume"]) {
+    const deps = { ...setup(), resume: vi.fn() };
+    const result = await handleWorkflowOperation({ session: identity, enabled: true, clientId: "client", body: { runId: body.runId, operation }, ...deps });
+    expect([401, 403]).toContain(result.status);
+    expect(deps.resume).not.toHaveBeenCalled();
+    expect(deps.read).not.toHaveBeenCalled();
+  }
+});
+it("resume uses server tenant and client, never browser approval or score", async () => {
+  const deps = { ...setup(), resume: vi.fn().mockResolvedValue({}) };
+  const result = await handleWorkflowOperation({ session, enabled: true, clientId: "client", body: { operation: "resume", runId: body.runId, approved: true, leadScore: 100, tenantId: "victim" }, ...deps });
+  expect(result.status).toBe(200);
+  expect(deps.resume).toHaveBeenCalledWith("tenant-a", "client", body.runId);
+});
+it.each([null, {}, { operation: "reset", runId: body.runId }, { operation: "resume", runId: "bad" }])("rejects malformed operations", async (body) => {
+  const deps = { ...setup(), resume: vi.fn() };
+  expect((await handleWorkflowOperation({ session, enabled: true, clientId: "client", body, ...deps })).status).toBe(400);
+  expect(deps.resume).not.toHaveBeenCalled();
+});
+it("keeps strict environment boundaries for both opt-in names", () => {
+  expect(isWorkflowEnabled({ AGENCYOS_BETA_WORKFLOW: "dry-run", VERCEL_ENV: "preview" })).toBe(true);
+  expect(isWorkflowEnabled({ AGENCYOS_BETA_WORKFLOW: "dry-run", NODE_ENV: "production" })).toBe(false);
+  expect(isWorkflowEnabled({ AGENCYOS_BETA_WORKFLOW: "dry-run", VERCEL_ENV: "production" })).toBe(false);
 });
