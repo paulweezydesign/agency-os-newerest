@@ -47,7 +47,7 @@ export const requestClientEmailGateAction = async (
 
 export const decidePolicyGateAction = async (
   gateId: string,
-  decision: "approve" | "deny",
+  decision: "approve" | "deny" | "recover",
 ): Promise<PolicyGateActionState> => {
   const session = toAuthSession(await auth());
   const service = await getPolicyGateService();
@@ -58,13 +58,19 @@ export const decidePolicyGateAction = async (
     body: { decision },
   });
 
+  if (result.status === 503 || result.status === 409) {
+    revalidatePath("/dashboard/policy-gates");
+  }
+
   if (result.status === 200) {
     revalidatePath("/dashboard/policy-gates");
     revalidatePath("/dashboard");
     return {
       success:
         result.body.status === "approved"
-          ? "Gate approved; side effect ran once."
+          ? result.body.dryRun
+            ? "Dry run recorded; no external message was sent."
+            : "Gate approved; effect completed."
           : "Gate denied; side effect did not run.",
     };
   }

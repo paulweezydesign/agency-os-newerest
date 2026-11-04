@@ -79,7 +79,7 @@ const PolicyGatesPage = async () => {
                 key={gate.id}
                 className="rounded-md border border-slate-200 px-4 py-3"
               >
-                <p className="font-medium text-slate-900">{gate.actionType}</p>
+                <p className="font-medium text-slate-900">{gate.actionType}{gate.dryRun ? " · dry run, zero sends" : ""}</p>
                 <p className="mt-1 text-sm text-slate-600">
                   Requested by {gate.requestedBy}
                   {gate.projectId ? ` · project ${gate.projectId}` : ""}
@@ -109,7 +109,10 @@ const PolicyGatesPage = async () => {
               >
                 {gate.status} · {gate.actionType} · decided by{" "}
                 {gate.decidedBy ?? "unknown"}
-                {gate.effectRan ? " · effect ran" : " · effect skipped"}
+                {gate.dryRun ? " · dry run" : ""}
+                {` · execution: ${gate.effectStatus ?? (gate.effectRan ? "succeeded" : "idle")}`}
+                {gate.dryRun && gate.status === "approved" && gate.effectStatus !== "succeeded" ?
+                  <div className="mt-2"><PolicyGateDecisionButtons gateId={gate.id} recovery /></div> : null}
               </li>
             ))}
           </ul>

@@ -12,16 +12,18 @@ import { createTaskService } from "@/lib/tasks/task-service";
 import { createMastraApp, mastra } from "./index";
 
 describe("createMastraApp", () => {
-  it("exports a Mastra stub with empty registries by default", () => {
+  it("registers the bounded workflow without requiring credentials or agent dependencies", () => {
     const app = createMastraApp();
 
     expect(app).toBeDefined();
     expect(app.listAgents()).toEqual({});
     expect(app.listTools()).toEqual({});
-    expect(app.listWorkflows()).toEqual({});
+    expect(Object.keys(app.listWorkflows())).toEqual(["clientPipeline"]);
+    expect(app.getWorkflow("clientPipeline").id).toBe("client-pipeline");
 
     expect(mastra).toBeDefined();
     expect(mastra.listAgents()).toEqual({});
+    expect(mastra.getWorkflow("clientPipeline").id).toBe("client-pipeline");
   });
 
   it("registers PM, seed teammates, and tools when deps are provided", () => {
@@ -48,6 +50,7 @@ describe("createMastraApp", () => {
     });
 
     const agents = app.listAgents();
+    expect(app.getWorkflow("clientPipeline").id).toBe("client-pipeline");
     const agentIds = Object.values(agents).map((agent) => agent.id).sort();
     expect(agentIds).toEqual(
       ["project-manager", ...SEED_TEAMMATE_ROLES].sort(),
