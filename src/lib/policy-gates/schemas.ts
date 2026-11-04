@@ -25,6 +25,15 @@ export const policyGateSchema = z.object({
   decidedBy: z.string().optional(),
   correlationId: z.string().min(1),
   effectRan: z.boolean(),
+  dryRun: z.boolean().optional(),
+  requestKey: z.string().min(1).optional(),
+  effectStatus: z.enum(["idle", "running", "succeeded", "failed", "unknown"]).optional(),
+  effectError: z.string().optional(),
+  effectReceipt: z.object({
+    key: z.string(),
+    mode: z.literal("dry-run"),
+    recordedAt: z.string(),
+  }).optional(),
   createdAt: z.string().min(1),
   decidedAt: z.string().optional(),
 });
@@ -33,10 +42,12 @@ export const requestPolicyGateInputSchema = z.object({
   actionType: policyGateActionTypeSchema,
   payload: policyGatePayloadSchema.default({}),
   projectId: z.string().min(1).optional(),
+  dryRun: z.boolean().optional(),
+  requestKey: z.string().min(1).optional(),
 });
 
 export const decidePolicyGateInputSchema = z.object({
-  decision: z.enum(["approve", "deny"]),
+  decision: z.enum(["approve", "deny", "recover"]),
 });
 
 export type PolicyGateActionType = z.infer<typeof policyGateActionTypeSchema>;

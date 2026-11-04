@@ -5,6 +5,8 @@ import type { AuthSession } from "@/lib/auth/session-context";
 import {
   PolicyGateNotFoundError,
   PolicyGateNotPendingError,
+  PolicyGateExecutionError,
+  PolicyGateRequestConflictError,
   type PolicyGateService,
 } from "./policy-gate-service";
 import {
@@ -17,7 +19,7 @@ type ErrorBody = { error: string };
 
 export type ApiResult<T> =
   | { status: 200 | 201; body: T }
-  | { status: 400 | 401 | 403 | 404 | 409; body: ErrorBody };
+  | { status: 400 | 401 | 403 | 404 | 409 | 503; body: ErrorBody };
 
 type HandlerDeps = {
   session: AuthSession;
@@ -33,7 +35,7 @@ const requestBodySchema = z.object({
 });
 
 const decisionBodySchema = z.object({
-  decision: z.enum(["approve", "deny"]),
+  decision: z.enum(["approve", "deny", "recover"]),
   correlationId: z.string().min(1).optional(),
   actorName: z.string().min(1).optional(),
 });
@@ -71,8 +73,7 @@ const requireOperator = (session: AuthSession) => {
 
 const actorFromSession = (
   context: { role: string; userId: string },
-  override?: string,
-) => override?.trim() || `${context.role}:${context.userId}`;
+) => `${context.role}:${context.userId}`;
 
 export const handleListPolicyGates = async ({
   session,
@@ -112,11 +113,14 @@ export const handleRequestPolicyGate = async ({
       payload: parsed.payload,
       projectId: parsed.projectId,
       correlationId,
-      requestedBy: actorFromSession(access.context, parsed.actorName),
+      requestedBy: actorFromSession(access.context),
     });
 
     return { status: 201, body: gate };
   } catch (error) {
+    if (error instanceof PolicyGateRequestConflictError) {
+      return { status: 409, body: { error: error.message } };
+    }
     if (error instanceof ZodError) {
       return { status: 400, body: { error: "Invalid request" } };
     }
@@ -141,10 +145,13 @@ export const handleDecidePolicyGate = async ({
   try {
     const parsed = decisionBodySchema.parse(body ?? {});
     const correlationId = parsed.correlationId?.trim() || randomUUID();
-    const decidedBy = actorFromSession(access.context, parsed.actorName);
+    const decidedBy = actorFromSession(access.context);
 
     const decide = async () => {
       switch (parsed.decision) {
+        case "recover":
+          return service.recover({ tenantId: access.context.tenantId, gateId,
+            decidedBy, correlationId });
         case "approve":
           return service.approve({
             tenantId: access.context.tenantId,
@@ -177,6 +184,9 @@ export const handleDecidePolicyGate = async ({
     }
     if (error instanceof PolicyGateNotPendingError) {
       return { status: 409, body: { error: "Policy gate already decided" } };
+    }
+    if (error instanceof PolicyGateExecutionError) {
+      return { status: 503, body: { error: error.message } };
     }
     throw error;
   }

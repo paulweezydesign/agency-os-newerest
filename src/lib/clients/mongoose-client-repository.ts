@@ -1,5 +1,6 @@
 import type { ClientRepository } from "./client-repository";
 import { getClientModel } from "./client-model";
+import { ClientWorkflowReservedError } from "./client-errors";
 import {
   DEFAULT_LEAD_SCORE,
   DEFAULT_PIPELINE_STAGE,
@@ -80,7 +81,7 @@ export const createMongooseClientRepository = (): ClientRepository => ({
 
     const doc = await model
       .findOneAndUpdate(
-        { _id: id, tenantId },
+        { _id: id, tenantId, workflowRunId: { $exists: false } },
         {
           pipelineStage: input.pipelineStage,
           leadScore: input.leadScore,
@@ -92,6 +93,9 @@ export const createMongooseClientRepository = (): ClientRepository => ({
       )
       .exec();
 
+    if (!doc && await model.exists({ _id: id, tenantId, workflowRunId: { $exists: true } })) {
+      throw new ClientWorkflowReservedError();
+    }
     return doc ? toClient(doc) : null;
   },
 });
