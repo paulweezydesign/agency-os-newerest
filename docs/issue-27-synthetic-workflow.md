@@ -48,6 +48,8 @@ Use inspection for lost responses. An idle admission can retry with its existing
 
 ## Verification
 
+For a self-contained local browser demonstration with an owned Mongo container, synthetic fixtures and persisted evidence, use [the local workflow demo](local-workflow-demo.md). Existing `npm run demo` and `npm run seed` are test stand-ins, not this browser acceptance runner.
+
 See `docs/integration-30-verification.md` for executed checks and limitations. Reproducible local commands:
 
 ```sh
