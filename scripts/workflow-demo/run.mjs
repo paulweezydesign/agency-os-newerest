@@ -3,7 +3,7 @@ import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { randomBytes } from "node:crypto";
 import { createServer } from "node:net";
-import { mkdtemp, mkdir, cp, symlink, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, symlink, writeFile, rm } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -12,11 +12,13 @@ import mongoose from "mongoose";
 import { MongoDBStore } from "@mastra/mongodb";
 import { chromium } from "playwright";
 import { validateDockerEndpoint, assertLocalContext, parseDemoArgs, demoEnvironment, summarizeEvidence } from "./config.mjs";
+import { copyDemoSource, browserLaunchOptions, cleanupRuntime, bounded, ownedProcessGroup } from "./lifecycle.mjs";
 import { verifyOperatorFlow } from "./browser.mjs";
 
 const execute = promisify(execFile);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 assertLocalContext();
+if (process.platform === "win32") throw new Error("Demo requires POSIX process groups; use Linux or macOS (Windows execution is unsupported)");
 const options = parseDemoArgs(process.argv.slice(2));
 if (options.hold && !process.stdin.isTTY) throw new Error("--hold requires an interactive terminal; omit it for acceptance checks");
 const id = randomBytes(8).toString("hex");
@@ -26,7 +28,7 @@ const output = path.join(root, ".scratch/demo-evidence", id);
 const workspace = await mkdtemp(path.join(tmpdir(), "agency-demo-"));
 await mkdir(output, { recursive: true });
 const evidence = { source: {}, database, fontMode: "local-font-mock", browser: "", checks: [], errors: [], externalRequests: [], workflowRequests: [], records: [], passed: false };
-let child, browser, storage, dockerEndpoint;
+let child, appGroup, browser, storage, dockerEndpoint;
 const dockerEnv = { ...process.env };
 delete dockerEnv.DOCKER_HOST; delete dockerEnv.DOCKER_CONTEXT;
 const docker = args => execute("docker", ["--host", dockerEndpoint, ...args], { env: dockerEnv });
@@ -46,11 +48,7 @@ try {
   }
   dockerEndpoint = validateDockerEndpoint(endpoint);
   await docker(["image", "inspect", "mongo:7"]);
-  // Only these source/config files enter the temporary app; no env file is copied.
-  for (const entry of ["src", "package.json", "package-lock.json", "next.config.ts", "tsconfig.json", "postcss.config.mjs", "eslint.config.mjs", "next-env.d.ts"]) {
-    await cp(path.join(root, entry), path.join(workspace, entry), { recursive: true });
-  }
-  await cp(path.join(root, "public"), path.join(workspace, "public"), { recursive: true }).catch(error => { if (error.code !== "ENOENT") throw error; });
+  await copyDemoSource(root, workspace);
   await symlink(path.join(root, "node_modules"), path.join(workspace, "node_modules"), process.platform === "win32" ? "junction" : "dir");
   containerAttempted = true;
   await docker(["run", "--detach", "--rm", "--name", container, "--label", `agencyos.local-demo=${id}`, "--publish", "127.0.0.1::27017", "mongo:7"]);
@@ -67,7 +65,8 @@ try {
   const env = demoEnvironment({ uri, port, secret: randomBytes(32).toString("hex"), fontMock: path.join(root, "scripts/workflow-demo/fonts.cjs") });
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 30000 });
   const version = await mongoose.connection.db.admin().serverInfo(); evidence.mongoVersion = version.version;
-  child = spawn(process.execPath, [path.join(root, "node_modules/next/dist/bin/next"), "dev", "--hostname", "127.0.0.1", "--port", String(port)], { cwd: workspace, env, stdio: ["ignore", "pipe", "pipe"] });
+  child = spawn(process.execPath, [path.join(root, "node_modules/next/dist/bin/next"), "dev", "--hostname", "127.0.0.1", "--port", String(port)], { cwd: workspace, env, detached: true, stdio: ["ignore", "pipe", "pipe"] });
+  appGroup = ownedProcessGroup(child.pid);
   const log = createWriteStream(path.join(output, "server.log")); child.stdout.pipe(log); child.stderr.pipe(log);
   let ready = false;
   for (let attempt = 0; attempt < 120 && !interrupted; attempt++) {
@@ -76,9 +75,10 @@ try {
     await delay(500);
   }
   if (!ready) throw new Error("Local app did not become ready");
-  browser = await chromium.launch({ headless: !options.headed, ...(options.chromium ? { executablePath: options.chromium } : {}), ...(options.noSandbox ? { args: ["--no-sandbox"] } : {}) });
+  evidence.chromiumSandbox = !options.noSandbox;
+  browser = await chromium.launch(browserLaunchOptions(options));
   evidence.browser = browser.version();
-  const { clientIds, page } = await verifyOperatorFlow({ browser, url, db: mongoose.connection.db, evidence });
+  const { clientIds, page } = await verifyOperatorFlow({ browser, url, db: mongoose.connection.db, evidence, screenshotDir: output });
   storage = new MongoDBStore({ id: "demo-evidence", uri, dbName: database });
   const workflows = await storage.getStore("workflows");
   for (const clientId of clientIds) {
@@ -115,34 +115,30 @@ try {
   evidence.failure = error instanceof Error ? error.message : "Demo failed";
   console.error(evidence.failure, `Evidence: ${output}`); process.exitCode = 1;
 } finally {
-  await browser?.close().catch(() => {});
-  if (child && child.exitCode === null) {
-    child.kill("SIGTERM");
-    await Promise.race([new Promise(resolve => child.once("exit", resolve)), delay(5000)]);
-    if (child.exitCode === null) child.kill("SIGKILL");
-  }
-  await storage?.close().catch(() => {}); await mongoose.disconnect().catch(() => {});
+  const cleanupErrors = await cleanupRuntime({ browser, child, group: appGroup, storage, disconnect: () => mongoose.disconnect() });
   try {
     if (containerAttempted) {
-      const inspection = await docker(["inspect", container]).catch(error => {
+      const inspection = await bounded("Container inspection", () => docker(["inspect", container])).catch(error => {
         if (String(error.stderr).includes("No such object") || String(error.stderr).includes("No such container")) return null;
         throw error;
       });
       if (inspection) {
         const owned = JSON.parse(inspection.stdout)[0];
         if (owned.Config?.Labels?.["agencyos.local-demo"] !== id) throw new Error("Container ownership could not be verified; no cleanup attempted");
-        await docker(["rm", "--force", container]);
+        await bounded("Container removal", () => docker(["rm", "--force", container]));
       }
     }
-    await rm(workspace, { recursive: true, force: true });
-    evidence.cleanupPassed = true;
+    if (!cleanupErrors.length) await bounded("Temporary workspace removal", () => rm(workspace, { recursive: true, force: true }));
   } catch (error) {
-    evidence.cleanupError = error.message;
-    console.error("Cleanup failed:", error.message);
-    process.exitCode = 1;
+    cleanupErrors.push(error.message);
   }
+  evidence.cleanupPassed = cleanupErrors.length === 0;
+  if (cleanupErrors.length) { evidence.cleanupErrors = cleanupErrors; evidence.retainedWorkspace = workspace; console.error("Cleanup incomplete:", cleanupErrors.join("; ")); process.exitCode = 1; }
   evidence.passed = Boolean(evidence.workflowPassed && evidence.cleanupPassed && !evidence.failure);
   await writeFile(path.join(output, "evidence.json"), JSON.stringify(evidence, null, 2));
   process.off("SIGINT", shutdown); process.off("SIGTERM", shutdown);
+  // A failed shutdown may retain handles. Persist failure first, then terminate
+  // the runner without claiming the unverified child/browser was cleaned up.
+  if (cleanupErrors.length) process.exit(1);
   if (evidence.passed) console.log(`PASS: acceptance and cleanup complete. Evidence: ${output}`);
 }

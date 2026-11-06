@@ -16,3 +16,9 @@ Preserve immutable Client run, pending approval, explicit receipt recovery, unkn
 - ordinary build with cached artifacts passed, but clearing generated build cache reproduced Google Geist/Geist Mono download failure. Font-mocked full build passed; ordinary clean build remains blocked.
 - Independent reviewer: six safeguard tests and diff check passed. Fixed remote Docker context selection, canonical named-pipe support, cleanup truthfulness/ownership, and Node prerequisite. No substantive finding remained.
 - No application/schema/security changes. Hosted Preview/GitHub OAuth, production, headed/hold mode and cross-platform browser execution were not run. Exact clean-commit browser evidence is produced after this local commit and retained outside tracked files.
+
+## Parent review corrections (2026-11-06)
+
+Parent review found generated next-env.d.ts was incorrectly required, Playwright's default did not enforce the documented sandbox, and shutdown failures could be hidden. Removed all generated declarations from copy inputs; Next generates them. Explicit chromiumSandbox is true unless --no-sandbox. Bounded shutdown records all failures; SIGTERM/SIGKILL verifies both the spawned Next CLI exit and absence of live descendants in its owned POSIX process group. Windows execution is now explicitly unsupported. Failed cleanup retains the temporary workspace and exits nonzero after evidence is written.
+
+Regression coverage includes missing generated files/no dotenv copy, launch options, rejected/hanging browser close, failed process exit, and actual parent+server processes ignoring SIGTERM then killed and verified as a group. Optional screenshots retain only synthetic Client/pending/receipt/completed views. Fresh tracked-checkout installation and both sandbox modes are verified separately in the final correction report; prior ordinary Google Fonts limitation remains.

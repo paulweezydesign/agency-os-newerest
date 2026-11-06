@@ -1,11 +1,12 @@
 import { expect as baseExpect } from 'playwright/test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Types } from 'mongoose';
 const ObjectId = Types.ObjectId;
 const expect = baseExpect.configure({ timeout: 45000 });
 
-export async function verifyOperatorFlow({ browser, url, db, evidence }) {
+export async function verifyOperatorFlow({ browser, url, db, evidence, screenshotDir }) {
  const context = await browser.newContext();
  await context.route('**/*', route => {
    if (new URL(route.request().url()).origin !== url) {
@@ -36,6 +37,7 @@ export async function verifyOperatorFlow({ browser, url, db, evidence }) {
   const clientId = await fixture('Example Browser Main','browser-main@example.test');
   evidence.clientId=clientId;
   await page.goto(url+'/dashboard/clients/'+clientId);
+  if (screenshotDir) await page.screenshot({ path: path.join(screenshotDir, '01-synthetic-client.png'), fullPage: true });
   const form = page.getByRole('form',{name:'Durable dry-run client pipeline'});
   await expect(form.getByRole('button',{name:'Run dry-run pipeline'})).toBeEnabled();
   await form.getByLabel('Lead score (0–100)').fill('70');
@@ -45,6 +47,7 @@ export async function verifyOperatorFlow({ browser, url, db, evidence }) {
   const requestId=evidence.workflowRequests.find(r=>r.operation==='start').runId;
   evidence.requestId=requestId;
   await expect(form.getByRole('button',{name:'Resume after decision'})).toBeDisabled();
+  if (screenshotDir) await page.screenshot({ path: path.join(screenshotDir, '02-pending-approval.png'), fullPage: true });
   check('Double click sends one start, reaches pending gate, resume disabled');
   const gateHref=await form.getByRole('link',{name:/Review gate/}).getAttribute('href');
   const gateId=new URL(url+gateHref).searchParams.get('gateId'); evidence.gateId=gateId;
@@ -56,6 +59,7 @@ export async function verifyOperatorFlow({ browser, url, db, evidence }) {
   await form.getByRole('link',{name:/Review gate/}).click();
   await page.locator('#gate-'+gateId).getByRole('button',{name:'Approve',exact:true}).click();
   await expect(page.locator('#gate-'+gateId)).toContainText('approved');
+  if (screenshotDir) await page.screenshot({ path: path.join(screenshotDir, '03-approved-receipt.png'), fullPage: true });
   await page.goto(url+'/dashboard/clients/'+clientId);
   await expect(form.getByRole('button',{name:'Resume after decision'})).toBeEnabled();
   await expect(form.getByText('approved',{exact:false})).toBeVisible();
