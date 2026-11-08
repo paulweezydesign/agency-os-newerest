@@ -14,7 +14,11 @@ Date: 2026-11-07. Branch: `integrate/v1-review-candidate`.
 
 The path imports no broad agent, tracker, GitHub, Slack, research, email, payment or policy-gate service getters.
 
-## Deliberately unfinished live wiring
+## Provider wiring update (2026-11-08)
+
+The follow-up OpenAI adapter now wires `getAgentRunService()` to the specifically requested `gpt-6-astra` through Mastra's Responses API transport. It remains default-off and requires server-only credentials plus the existing explicit synthetic scope. See [the current setup and verification guide](openai-bounded-provider.md). No real key or paid model request was used during implementation. The original live-wiring status below describes the candidate before that follow-up.
+
+## Original live-wiring status (before the OpenAI follow-up)
 
 `getAgentRunService()` intentionally returns an unavailable error. **Setting environment variables does not enable a working live provider.** Authorized requests still receive HTTP 503 until a reviewed adapter is wired. No credential lookup, OAuth flow, ChatGPT sign-in, NVIDIA endpoint or OpenAI fallback was added.
 
@@ -22,7 +26,7 @@ The factories and injected service are implemented; they have not made a real mo
 
 The new feature has no dashboard run-control UI yet. Existing Task/artifact views can inspect outputs once a supported runtime is wired and verified. UI start/inspect controls and live acceptance remain follow-up work, not completed functionality.
 
-## Configuration contract for future approved wiring
+## Configuration contract
 
 - `AGENCYOS_AGENT_RUN_ENABLED=true` explicitly enables the boundary.
 - `AGENCYOS_AGENT_RUN_TENANT_ID` and `AGENCYOS_AGENT_RUN_PROJECT_ID` bind one confirmed synthetic scope.
@@ -31,7 +35,7 @@ The new feature has no dashboard run-control UI yet. Existing Task/artifact view
 - Preview additionally requires `VERCEL_ENV=preview` and `AGENCYOS_AGENT_RUN_PROTECTED_PREVIEW=true`. The latter is an operator assertion; verify real deployment protection separately before setting it.
 - Production is rejected. Mongo must support replica-set transactions. The intended synthetic Project must exist and must not have a GitHub repository binding.
 
-Provider/model support, data destination, account entitlement and a bounded test budget are separate decisions. Do not create credentials, assume a ChatGPT subscription authorizes arbitrary hosted inference, or initialize a new integration while resolving them.
+The selected API model and OpenAI destination are now explicit; account-specific access, billing and live acceptance remain unverified. Do not assume a subscription alone proves API entitlement or credits. The user supplies their own server key. No automatic fallback is configured.
 
 ## Executed checks
 

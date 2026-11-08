@@ -20,7 +20,9 @@ An uncertain run remains inspectable and blocked. There is no expiring lease, re
 
 Do not compose this feature with the existing general agent getters. Those can initialize GitHub, spawning, Monday synchronization, Slack, Exa or other capabilities. The new path uses only its dedicated persistence repository and bounded model factories. The Project Manager cannot write the deliverable itself; the teammate cannot contact anyone or execute code.
 
-Model adapters are injected and provider-neutral. No default model, credential discovery, sign-in implementation or provider fallback is added. The HTTP execution getter deliberately refuses live execution until an approved provider adapter is supplied. An existing ChatGPT plan or model name does not by itself establish that a hosted application can call it.
+Model adapters are injected and provider-neutral. An existing ChatGPT plan or model name does not by itself establish that a hosted application can call it.
+
+The approved OpenAI follow-up (2026-11-08) supplies the server adapter for exactly `gpt-6-astra`, with the runtime still default-off. It reads only an explicitly configured server `OPENAI_API_KEY`, rejects custom endpoints, and has no sign-in flow, model fallback or credential persistence. The Responses request uses low reasoning, standard service tier, bounded output, `store:false` and zero retries. Account entitlement and live execution remain acceptance gates. See [provider setup](../openai-bounded-provider.md).
 
 ## Consequences
 

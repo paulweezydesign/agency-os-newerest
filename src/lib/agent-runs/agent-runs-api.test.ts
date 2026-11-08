@@ -41,10 +41,10 @@ describe("agent run admission boundary", () => {
       expect(result.status).toBe(400); expect(start).not.toHaveBeenCalled();
     });
   });
-  it("has no implicit live adapter even with explicit runtime configuration", async () => {
+  it("does not enable the real runtime through injected route configuration", async () => {
     const result = await handleAgentRunRequest({ session, projectId, method: "POST", body, deps: { env } });
     expect(result.status).toBe(503);
-    expect(result.body).toEqual({ error: "Live model adapter requires explicit provider approval and configuration" });
+    expect(result.body).toEqual({ error: "Synthetic agent execution is disabled" });
   });
   it("derives tenant and actor from the authenticated session", async () => {
     const start = vi.fn().mockResolvedValue({ state: "completed" });
