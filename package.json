@@ -11,11 +11,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "node scripts/seed.mjs",
-    "demo": "node scripts/demo.mjs"
+    "demo": "node scripts/demo.mjs",
+    "demo:workflow": "node scripts/workflow-demo/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@mastra/core": "^1.57.0",
+    "@mastra/mongodb": "1.16.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.31.0",
@@ -37,6 +39,7 @@
     "@types/react-dom": "^19.2.4",
     "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.23",
+    "playwright": "1.62.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"

@@ -19,7 +19,18 @@ const policyGateSchema = new Schema(
     requestedBy: { type: String, required: true },
     decidedBy: { type: String, required: false },
     correlationId: { type: String, required: true },
+    // Read old operator-branch claims conservatively; never re-claim these rows.
+    workflowRunId: { type: String },
+    executionState: { type: String, enum: ["claimed", "uncertain", "completed"] },
     effectRan: { type: Boolean, required: true, default: false },
+    dryRun: { type: Boolean, default: false },
+    requestKey: { type: String },
+    effectStatus: {
+      type: String,
+      enum: ["idle", "running", "succeeded", "failed", "unknown"],
+    },
+    effectError: { type: String },
+    effectReceipt: { type: Schema.Types.Mixed },
     decidedAt: { type: Date, required: false },
   },
   {
@@ -28,6 +39,10 @@ const policyGateSchema = new Schema(
 );
 
 policyGateSchema.index({ tenantId: 1, status: 1, createdAt: 1 });
+policyGateSchema.index(
+  { tenantId: 1, requestKey: 1 },
+  { unique: true, partialFilterExpression: { requestKey: { $type: "string" } } },
+);
 
 export type PolicyGateDocument = InferSchemaType<typeof policyGateSchema> & {
   _id: mongoose.Types.ObjectId;

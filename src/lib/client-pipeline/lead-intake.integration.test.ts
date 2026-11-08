@@ -4,6 +4,7 @@ import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/
 import { handleCreateClient } from "@/lib/clients/clients-api";
 import { createInMemoryClientRepository } from "@/lib/clients/client-repository";
 import { createClientService } from "@/lib/clients/client-service";
+import { ClientWorkflowReservedError } from "@/lib/clients/client-errors";
 import { createInMemoryPolicyGateRepository } from "@/lib/policy-gates/policy-gate-repository";
 import { createPolicyGateService } from "@/lib/policy-gates/policy-gate-service";
 import { handleRunClientPipeline } from "./client-pipeline-api";
@@ -28,6 +29,16 @@ const makeFixture = () => {
 };
 
 describe("lead intake to policy-gated onboarding contract (Issue #27)", () => {
+  it("reports a workflow reservation conflict without treating the Client as missing", async () => {
+    const result = await handleRunClientPipeline({
+      session: operator,
+      clientId: "reserved-client",
+      body: { leadScore: 39 },
+      service: { run: async () => { throw new ClientWorkflowReservedError(); } },
+    });
+    expect(result.status).toBe(409);
+    expect(result.body).toEqual({ error: "Client is reserved by a workflow; resume its existing run" });
+  });
   it("persists a submitted contact email, queues nurture, and denies without sending", async () => {
     const { clients, actionLogs, policyGates, pipeline, runEffect } = makeFixture();
     const created = await handleCreateClient({
@@ -83,8 +94,10 @@ describe("lead intake to policy-gated onboarding contract (Issue #27)", () => {
     expect(denied).toMatchObject({ status: "denied", effectRan: false });
     expect(runEffect).not.toHaveBeenCalled();
 
-    const denyLogs = await actionLogs.listByCorrelationId("tenant-a", "deny-1");
-    expect(denyLogs[0]?.toolName).toBe("policyGates.deny");
+    const denyLogs = await actionLogs.listByCorrelationId("tenant-a", pendingGate.correlationId);
+    expect(denyLogs.find((log) => log.toolName === "policyGates.deny"))
+      .toMatchObject({ correlationId: pendingGate.correlationId,
+        input: { gateId: pendingGate.id, decisionCorrelationId: "deny-1" } });
     await expect(policyGates.approve({
       tenantId: "tenant-a",
       gateId: pendingGate.id,

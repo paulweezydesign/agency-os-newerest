@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { resolveOperatorApiAccess } from "@/lib/auth/operator-api-access";
 import type { AuthSession } from "@/lib/auth/session-context";
+import { ClientWorkflowReservedError } from "@/lib/clients/client-errors";
 import type { ClientPipelineService } from "./client-pipeline-service";
 import { runClientPipelineInputSchema } from "./schemas";
 
@@ -8,7 +9,7 @@ type ErrorBody = { error: string };
 
 export type ApiResult<T> =
   | { status: 200; body: T }
-  | { status: 400 | 401 | 403 | 404; body: ErrorBody };
+  | { status: 400 | 401 | 403 | 404 | 409; body: ErrorBody };
 
 const toAuthError = (
   status: "unauthenticated" | "forbidden",
@@ -57,6 +58,9 @@ export const handleRunClientPipeline = async (input: {
     });
     return { status: 200, body: result };
   } catch (error) {
+    if (error instanceof ClientWorkflowReservedError) {
+      return { status: 409, body: { error: "Client is reserved by a workflow; resume its existing run" } };
+    }
     if (error instanceof ZodError) {
       return { status: 400, body: { error: "Invalid request" } };
     }
