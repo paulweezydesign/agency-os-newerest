@@ -29,3 +29,19 @@ Use `npm run build` for the aggregate check. The isolated replica-set setup and 
 Existing Mastra dynamic-dependency and Auth.js/Jose Edge compression warnings remain. This is local code, authorization, transaction, application-crash and orderly-database-restart evidence. It does not establish abrupt database/power-loss recovery, multi-node failover, protected Preview acceptance, live GitHub OAuth, live model access/output, or browser visual/keyboard/mobile behavior.
 
 Webhook signature-before-storage behavior is a separate existing contract and remains outside these session-route changes. No push, PR update, merge, deployment, production change, live model request, communication, or payment was performed.
+
+## Webhook safety integration update — 2026-11-14
+
+The next isolated branch is `fix/agencyos-webhook-integrated`. Application code `16a3699578fa4a6620bc28a3b6e37f6442e23a97` cleanly cherry-picks reviewed webhook commit `e290b427785dd113ac595bc2775d64d884da01ba` onto the earlier final candidate `9e9cfec5a80aa1e803840180e897c5f7b2500649`. `git range-diff` confirms the cherry-picked patch is unchanged; the earlier branches remain intact.
+
+This supersedes the webhook follow-up above: the Linear, Monday, and Stripe adapters are synthetic fixtures, so all three routes now fail closed with 503 outside local development/test and in every Vercel environment, before parsing or initializing dependencies. Local fixtures retain lazy validation-before-storage. They remain unauthenticated and require loopback binding plus isolated fictional data. This is not a live provider integration. See [webhook safety boundaries](webhook-safety.md).
+
+Fresh checks against this exact application code:
+
+- `NEXT_TELEMETRY_DISABLED=1 npm run build` passed ESLint, TypeScript, **634 ordinary tests / 58 opt-in skips**, and production compilation/page generation. No font mock was set. The webhook worker's earlier Google Fonts DNS failure did not recur; a separate font-mocked build was unnecessary. The first build attempt had stopped at Next's telemetry configuration write on the read-only home filesystem; disabling telemetry for the command resolved that environment issue without source changes.
+- The committed HTTP harness passed **nine checks** against the newly built application: six production requests returned the expected 503, and three development invalid-payload/signature requests returned the existing 400 errors. No Mongo URI or provider credential was supplied. Both owned loopback servers stopped. Updated evidence is in `.scratch/webhook-safety/http-evidence.json`. The harness uses the existing font fixture for its development server; this is route behavior evidence, not visual browser QA.
+- Independent combined review found no blocking regression and passed **283 focused tests across nine files**. `git diff --check` passed.
+
+The earlier replica-set/crash evidence above belongs to the unchanged database slice. No fresh Mongo run is claimed for this update: its temporary native binary and orchestration files were no longer present, and no replacement runtime or database was created. Agent-run, Task, and restart-harness source is unchanged from `9e9cfec`.
+
+Existing build warnings and protected Preview, live OAuth/provider, multi-node failure, and visual/keyboard/mobile acceptance limits remain. The local Stripe fixture parser and payment replay handling are not production verification. No push, deployment, provider settings, credential changes, or external effects occurred.
