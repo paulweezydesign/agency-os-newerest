@@ -14,11 +14,10 @@ type RouteContext = { params: Promise<{ projectId: string }> };
 export const GET = async (_request: Request, context: RouteContext) => {
   const { projectId } = await context.params;
   const session = toAuthSession(await auth());
-  const uat = await getUatService();
-  const projects = await getProjectService();
 
   const operator = resolveOperatorApiAccess(session);
   if (operator.status === "allow") {
+    const uat = await getUatService();
     const checklist = await uat.getByProject(
       operator.context.tenantId,
       projectId,
@@ -34,11 +33,13 @@ export const GET = async (_request: Request, context: RouteContext) => {
     );
   }
 
+  const projects = await getProjectService();
   const project = await projects.get(portal.context.tenantId, projectId);
   if (!project || project.clientId !== portal.context.clientId) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const uat = await getUatService();
   const checklist = await uat.getByProject(portal.context.tenantId, projectId);
   return NextResponse.json(checklist, { status: 200 });
 };

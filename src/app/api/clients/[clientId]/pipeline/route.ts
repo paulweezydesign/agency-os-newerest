@@ -1,3 +1,4 @@
+import { getApiSessionAccessError } from "@/lib/auth/api-session-access";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { handleRunClientPipeline } from "@/lib/client-pipeline/client-pipeline-api";
@@ -11,9 +12,14 @@ type RouteContext = {
 export const POST = async (request: Request, context: RouteContext) => {
   const { clientId } = await context.params;
   const body = await request.json().catch(() => null);
+  const session = toAuthSession(await auth());
+  const accessError = getApiSessionAccessError(session);
+  if (accessError) {
+    return NextResponse.json(accessError.body, { status: accessError.status });
+  }
   const service = await getClientPipelineService();
   const result = await handleRunClientPipeline({
-    session: toAuthSession(await auth()),
+    session,
     service,
     clientId,
     body,

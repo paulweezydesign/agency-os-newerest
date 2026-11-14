@@ -1,3 +1,4 @@
+import { getApiSessionAccessError } from "@/lib/auth/api-session-access";
 import { auth } from "@/auth";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
 import { getArtifactService } from "@/lib/project-artifacts/get-artifact-service";
@@ -10,6 +11,10 @@ type RouteContext = {
 export const POST = async (request: Request, context: RouteContext) => {
   const { projectId } = await context.params;
   const session = toAuthSession(await auth());
+  const accessError = getApiSessionAccessError(session);
+  if (accessError) {
+    return Response.json(accessError.body, { status: accessError.status });
+  }
   const service = await getArtifactService();
   const body = await request.json().catch(() => ({}));
   const result = await handleSendSow({
