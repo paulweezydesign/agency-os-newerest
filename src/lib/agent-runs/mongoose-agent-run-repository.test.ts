@@ -83,6 +83,29 @@ describe.skipIf(!enabled)("AgentRun Mongo transactions (opt-in replica set)", ()
     await expect(repository.createTask(run, task)).rejects.toThrow();
     expect((await repository.admit(run)).admitted).toBe(false);
   });
+  it("reconciles a lost completion response from durable state without replay", async () => {
+    const generator = {
+      modelId: run.modelId,
+      orchestrate: vi.fn(async (_prompt, createTask) => { await createTask(task); }),
+      produceBrief: vi.fn(async () => brief),
+    };
+    const service = createAgentRunService({
+      ...repository,
+      complete: async (...args) => {
+        await repository.complete(...args);
+        throw new Error("injected lost response after commit");
+      },
+    }, generator);
+    const completed = await service.start(run);
+    expect(completed.state).toBe("completed");
+    expect(await service.start(run)).toEqual(completed);
+    expect(generator.orchestrate).toHaveBeenCalledTimes(1);
+    expect(generator.produceBrief).toHaveBeenCalledTimes(1);
+    const scope = { tenantId, projectId: run.projectId };
+    expect(await getTaskModel().countDocuments(scope)).toBe(1);
+    expect(await getProjectArtifactModel().countDocuments(scope)).toBe(1);
+    expect(await getAgentActionLogModel().countDocuments({ ...scope, correlationId: `agent-run:${run.runId}` })).toBe(3);
+  });
   it("does not overwrite committed completion with uncertainty", async () => {
     await repository.admit(run);
     await repository.createTask(run, task);

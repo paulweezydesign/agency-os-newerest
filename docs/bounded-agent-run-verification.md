@@ -50,6 +50,10 @@ Fresh installation used `npm ci --cache /tmp/agencyos-v1-npm-cache --no-audit --
 
 ## Real database and browser limits
 
+**Update (2026-11-14):** Disposable local replica-set execution is now verified after correcting conflicting Task index declarations. See [the real database and crash/restart evidence](agent-run-replicaset-verification.md). The historical environment failure below and the still-unverified protected Preview/live-provider checks remain distinct.
+
+### Original executor and browser limits (2026-11-07–08)
+
 The executor has no Docker daemon. An ephemeral official Mongo runtime was attempted outside the repository without modifying application dependencies. Mongo 8.2.6 aborted during CPU discovery; Mongo 7.0.45 exited during startup with `open: Operation not permitted`, including an approved escalated execution attempt. No deployed database was used. Therefore transaction rollback, real unique-index contention, process crash/restart and the live-edit regression are **not verified against a running replica set** here.
 
 The opt-in suite is `src/lib/agent-runs/mongoose-agent-run-repository.test.ts`. It requires `MONGODB_TEST_URI` pointing to a loopback replica set and a database name containing `test`. It uses a random tenant and removes only that tenant's synthetic fixtures. Never supply a production/shared database URI. Run this suite in a compatible isolated environment before live-model acceptance. Separate fresh-process/crash acceptance remains outstanding beyond these repository tests.
