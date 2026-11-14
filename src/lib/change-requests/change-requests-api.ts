@@ -101,6 +101,7 @@ export const handleDecideChangeRequest = async (input: {
     if (operator.status === "allow") {
       const decided = await input.service.decide({
         tenantId: operator.context.tenantId,
+        projectId: input.projectId,
         changeRequestId: input.changeRequestId,
         decision: parsed.decision,
         actorId: operator.context.userId,
@@ -129,6 +130,7 @@ export const handleDecideChangeRequest = async (input: {
 
     const decided = await input.service.decide({
       tenantId: portal.context.tenantId,
+      projectId: input.projectId,
       changeRequestId: input.changeRequestId,
       decision: parsed.decision,
       actorId: portal.context.userId,

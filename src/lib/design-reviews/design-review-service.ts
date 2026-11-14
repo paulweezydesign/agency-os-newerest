@@ -60,6 +60,7 @@ export type DesignReviewService = {
   }) => Promise<DesignReview>;
   decide: (input: {
     tenantId: string;
+    projectId: string;
     reviewId: string;
     decision: "approve" | "reject";
     annotation?: string;
@@ -183,13 +184,14 @@ export const createDesignReviewService = (deps: {
     }
     return updated;
   },
-  decide: async ({ tenantId, reviewId, decision, annotation, decidedBy }) => {
+  decide: async ({ tenantId, projectId, reviewId, decision, annotation, decidedBy }) => {
     const parsed = decideDesignReviewInputSchema.parse({
       decision,
       annotation,
     });
     const existing = await deps.reviews.getByTenantAndId(tenantId, reviewId);
-    if (!existing) {
+    // Check the authorized URL project before any state validation or mutation.
+    if (!existing || existing.projectId !== projectId) {
       throw new DesignReviewNotFoundError();
     }
     if (existing.status === "approved" || existing.status === "rejected") {

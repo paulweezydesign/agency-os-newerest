@@ -62,6 +62,7 @@ describe("design review service", () => {
 
     const approved = await reviews.decide({
       tenantId: "t1",
+      projectId: project.id,
       reviewId: created.id,
       decision: "approve",
       decidedBy: "user-client",
@@ -80,6 +81,7 @@ describe("design review service", () => {
     });
     await reviews.decide({
       tenantId: "t1",
+      projectId: project.id,
       reviewId: created.id,
       decision: "reject",
       decidedBy: "user-client",
@@ -89,6 +91,7 @@ describe("design review service", () => {
     await expect(
       reviews.decide({
         tenantId: "t1",
+        projectId: project.id,
         reviewId: created.id,
         decision: "approve",
         decidedBy: "user-client",
@@ -115,6 +118,7 @@ describe("design review service", () => {
 
     const approved = await reviews.decide({
       tenantId: "t1",
+      projectId: project.id,
       reviewId: created.id,
       decision: "approve",
       decidedBy: "user-client",

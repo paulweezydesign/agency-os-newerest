@@ -40,6 +40,7 @@ export type ChangeRequestService = {
   ) => Promise<ChangeRequest[]>;
   decide: (input: {
     tenantId: string;
+    projectId: string;
     changeRequestId: string;
     decision: "approve" | "reject";
     actorId: string;
@@ -80,6 +81,7 @@ export const createChangeRequestService = (deps: {
     deps.changeRequests.listByProject(tenantId, projectId),
   decide: async ({
     tenantId,
+    projectId,
     changeRequestId,
     decision,
     actorId,
@@ -90,7 +92,8 @@ export const createChangeRequestService = (deps: {
       tenantId,
       changeRequestId,
     );
-    if (!existing) {
+    // Check the authorized URL project before any state validation or mutation.
+    if (!existing || existing.projectId !== projectId) {
       throw new ChangeRequestNotFoundError();
     }
 
