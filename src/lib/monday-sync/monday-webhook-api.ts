@@ -11,24 +11,28 @@ export type WebhookApiResult =
   | { status: 200; body: ApplyMondayWebhookResult }
   | { status: 400; body: { error: string } };
 
-export const handleMondayWebhook = async ({
-  body,
-  tasks,
-  syncLogs,
-  defaultTenantId,
-}: {
-  body: unknown;
+type WebhookRuntime = {
   tasks: TaskRepository;
   syncLogs: SyncLogRepository;
+};
+
+type WebhookInput = {
+  body: unknown;
   defaultTenantId?: string;
-}): Promise<WebhookApiResult> => {
+} & (WebhookRuntime | { getRuntime: () => Promise<WebhookRuntime> });
+
+export const handleMondayWebhook = async (
+  input: WebhookInput,
+): Promise<WebhookApiResult> => {
   try {
-    const payload = mondayWebhookPayloadSchema.parse(body);
+    const payload = mondayWebhookPayloadSchema.parse(input.body);
+    // Do not initialize storage for malformed webhook requests.
+    const { tasks, syncLogs } = "getRuntime" in input ? await input.getRuntime() : input;
     const result = await applyMondayWebhook({
       payload,
       tasks,
       syncLogs,
-      defaultTenantId,
+      defaultTenantId: input.defaultTenantId,
     });
     return { status: 200, body: result };
   } catch (error) {

@@ -1,0 +1,106 @@
+{
+  "mode": "loopback only; synthetic requests; no Mongo or provider credentials",
+  "checks": [
+    {
+      "mode": "production",
+      "provider": "linear",
+      "kind": "valid-fixture",
+      "status": 503,
+      "body": {
+        "error": "Live webhooks are not configured"
+      },
+      "durationMs": 804
+    },
+    {
+      "mode": "production",
+      "provider": "linear",
+      "kind": "malformed",
+      "status": 503,
+      "body": {
+        "error": "Live webhooks are not configured"
+      },
+      "durationMs": 7
+    },
+    {
+      "mode": "production",
+      "provider": "monday",
+      "kind": "valid-fixture",
+      "status": 503,
+      "body": {
+        "error": "Live webhooks are not configured"
+      },
+      "durationMs": 5
+    },
+    {
+      "mode": "production",
+      "provider": "monday",
+      "kind": "malformed",
+      "status": 503,
+      "body": {
+        "error": "Live webhooks are not configured"
+      },
+      "durationMs": 4
+    },
+    {
+      "mode": "production",
+      "provider": "stripe",
+      "kind": "valid-fixture",
+      "status": 503,
+      "body": {
+        "error": "Live webhooks are not configured"
+      },
+      "durationMs": 4
+    },
+    {
+      "mode": "production",
+      "provider": "stripe",
+      "kind": "malformed",
+      "status": 503,
+      "body": {
+        "error": "Live webhooks are not configured"
+      },
+      "durationMs": 4
+    },
+    {
+      "mode": "development",
+      "provider": "linear",
+      "kind": "malformed",
+      "status": 400,
+      "body": {
+        "error": "Invalid webhook payload"
+      },
+      "durationMs": 225
+    },
+    {
+      "mode": "development",
+      "provider": "monday",
+      "kind": "malformed",
+      "status": 400,
+      "body": {
+        "error": "Invalid webhook payload"
+      },
+      "durationMs": 489
+    },
+    {
+      "mode": "development",
+      "provider": "stripe",
+      "kind": "malformed",
+      "status": 400,
+      "body": {
+        "error": "Invalid webhook signature"
+      },
+      "durationMs": 286
+    }
+  ],
+  "ownedAppsStopped": [
+    {
+      "mode": "production",
+      "stopped": true
+    },
+    {
+      "mode": "development",
+      "stopped": true
+    }
+  ],
+  "passed": true
+}

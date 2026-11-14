@@ -18,12 +18,16 @@ Seed users (Credentials): `admin@agencyos.local` / `admin-dev`, `operator@agency
 | --- | --- | --- |
 | Resend | in-memory client | Fail on invalid recipient; HTTP adapter should use `withRetry` |
 | Slack | in-memory client | Fail-open notifier; errors logged to AgentActionLog |
-| Stripe | in-memory + webhook verify | Deposit create/webhook; wrap HTTP with `withRetry` when live |
+| Stripe | in-memory fixture; deployed webhook unavailable | Test signature only, not live provider verification; see [webhook safety](webhook-safety.md) |
 | Figma | in-memory client | Design-review attach uses `withRetry` for rate-limit/unavailable |
 | Exa / Linear / Monday / GitHub | in-memory clients | Sync logs record conflicts; HTTP adapters should set 10s timeout + 2 retries |
 | Shared helper | `src/lib/http/with-retry.ts` | Exponential backoff, TimeoutError, configurable `shouldRetry` |
 
 Circuit breaker: v1 does not trip a global breaker; prefer fail-open notifications and logged sync rejects. Add per-client breakers when live HTTP clients land.
+
+## Webhook availability
+
+Linear, Monday, and Stripe webhook routes are synthetic-only and return 503 in production and every Vercel runtime. Local fixture routes remain unauthenticated: bind development servers to `127.0.0.1` and use only an isolated fictional database. See [webhook safety](webhook-safety.md) before running fixtures or implementing real provider delivery.
 
 ## Correlation IDs
 

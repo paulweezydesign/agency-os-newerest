@@ -10,10 +10,9 @@ export type ApiResult<T> =
 
 export const handleStripeWebhook = async (input: {
   stripe: StripeClient;
-  deposits: DepositService;
   payload: string;
   signature: string;
-}): Promise<
+} & ({ deposits: DepositService } | { getDeposits: () => Promise<DepositService> })): Promise<
   ApiResult<{ received: true; projectId: string; depositTotal: number }>
 > => {
   try {
@@ -30,7 +29,9 @@ export const handleStripeWebhook = async (input: {
       return { status: 400, body: { error: "Invalid checkout metadata" } };
     }
 
-    const result = await input.deposits.applyCheckoutCompleted({
+    // Verify the event and metadata before initializing database-backed services.
+    const deposits = "getDeposits" in input ? await input.getDeposits() : input.deposits;
+    const result = await deposits.applyCheckoutCompleted({
       tenantId,
       projectId,
       amount,
