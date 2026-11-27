@@ -1,3 +1,4 @@
+import { getApiSessionAccessError } from "@/lib/auth/api-session-access";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { toAuthSession } from "@/lib/auth/to-auth-session";
@@ -12,8 +13,13 @@ type RouteContext = {
 export const POST = async (request: Request, context: RouteContext) => {
   const { projectId, reviewId } = await context.params;
   const body = await request.json().catch(() => null);
+  const session = toAuthSession(await auth());
+  const accessError = getApiSessionAccessError(session, "portal");
+  if (accessError) {
+    return NextResponse.json(accessError.body, { status: accessError.status });
+  }
   const result = await handleDecideDesignReview({
-    session: toAuthSession(await auth()),
+    session,
     service: await getDesignReviewService(),
     projects: await getProjectService(),
     projectId,

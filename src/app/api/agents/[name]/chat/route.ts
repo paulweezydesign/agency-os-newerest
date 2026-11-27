@@ -1,3 +1,4 @@
+import { getApiSessionAccessError } from "@/lib/auth/api-session-access";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getProjectManagerAgent } from "@/lib/agents/get-project-manager-agent";
@@ -37,6 +38,10 @@ export const POST = async (request: Request, context: RouteContext) => {
   const body: unknown = await request.json().catch(() => ({}));
 
   if (name === PROJECT_MANAGER_AGENT_NAME) {
+    const accessError = getApiSessionAccessError(session);
+    if (accessError) {
+      return NextResponse.json(accessError.body, { status: accessError.status });
+    }
     const agent = await getProjectManagerAgent();
     const result = await handleProjectManagerChat({
       session,
@@ -48,6 +53,10 @@ export const POST = async (request: Request, context: RouteContext) => {
   }
 
   if (isSeedTeammateRole(name)) {
+    const accessError = getApiSessionAccessError(session);
+    if (accessError) {
+      return NextResponse.json(accessError.body, { status: accessError.status });
+    }
     const agent = await getTeammateAgent(name);
     if (!agent) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });

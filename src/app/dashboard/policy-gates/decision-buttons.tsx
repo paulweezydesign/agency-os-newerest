@@ -4,12 +4,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { decidePolicyGateAction } from "./actions";
 
-export const PolicyGateDecisionButtons = ({ gateId }: { gateId: string }) => {
+export const PolicyGateDecisionButtons = ({ gateId, recovery = false }: { gateId: string; recovery?: boolean }) => {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const onDecide = (decision: "approve" | "deny") => {
+  const onDecide = (decision: "approve" | "deny" | "recover") => {
     setMessage(null);
     setError(null);
     startTransition(async () => {
@@ -29,11 +29,11 @@ export const PolicyGateDecisionButtons = ({ gateId }: { gateId: string }) => {
           type="button"
           size="sm"
           disabled={pending}
-          onClick={() => onDecide("approve")}
+          onClick={() => onDecide(recovery ? "recover" : "approve")}
         >
-          Approve
+          {recovery ? "Recover dry run" : "Approve"}
         </Button>
-        <Button
+        {recovery ? null : <Button
           type="button"
           size="sm"
           variant="outline"
@@ -41,7 +41,7 @@ export const PolicyGateDecisionButtons = ({ gateId }: { gateId: string }) => {
           onClick={() => onDecide("deny")}
         >
           Deny
-        </Button>
+        </Button>}
       </div>
       {error ? <p className="text-xs text-red-700">{error}</p> : null}
       {message ? <p className="text-xs text-teal-800">{message}</p> : null}

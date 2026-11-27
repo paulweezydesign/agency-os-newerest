@@ -1,3 +1,4 @@
+import type { MastraCompositeStore } from "@mastra/core/storage";
 import { Mastra } from "@mastra/core";
 import {
   createProjectManagerAgent,
@@ -7,8 +8,10 @@ import { createSeedTeammateAgents } from "./agents/teammates";
 import { createProjectManagerGithubTools } from "./tools/github-tools";
 import { createProjectManagerSpawnTools } from "./tools/spawn-tools";
 import { createProjectManagerTaskTools } from "./tools/task-tools";
+import { createClientPipelineWorkflow } from "./workflows/client-pipeline";
 
 export type CreateMastraAppOptions = {
+  storage?: MastraCompositeStore;
   projectManagerDeps?: ProjectManagerAgentDeps;
 };
 
@@ -18,12 +21,14 @@ export type CreateMastraAppOptions = {
  */
 export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
   const { projectManagerDeps } = options;
+  const workflows = { clientPipeline: createClientPipelineWorkflow() };
 
   if (!projectManagerDeps) {
     return new Mastra({
       agents: {},
       tools: {},
-      workflows: {},
+      workflows,
+      storage: options.storage,
     });
   }
 
@@ -47,7 +52,8 @@ export const createMastraApp = (options: CreateMastraAppOptions = {}) => {
       ...teammates,
     },
     tools,
-    workflows: {},
+    workflows,
+    storage: options.storage,
   });
 };
 

@@ -49,6 +49,7 @@ describe("change request service", () => {
 
     const approved = await changeRequests.decide({
       tenantId: "t1",
+      projectId: project.id,
       changeRequestId: created.id,
       decision: "approve",
       actorId: "user-client",

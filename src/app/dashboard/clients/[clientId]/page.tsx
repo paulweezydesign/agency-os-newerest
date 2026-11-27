@@ -10,6 +10,8 @@ import { handleListProjectsForClient } from "@/lib/projects/projects-api";
 import { getProjectService } from "@/lib/projects/get-project-service";
 import { CreateProjectForm } from "./create-project-form";
 import { RunPipelineForm } from "./run-pipeline-form";
+import { DurablePipelineForm } from "./durable-pipeline-form";
+import { isWorkflowEnabled } from "@/lib/client-pipeline/workflow-api";
 
 export const dynamic = "force-dynamic";
 
@@ -103,12 +105,12 @@ const ClientDetailPage = async ({ params }: ClientDetailPageProps) => {
           Client email is policy-gated before Resend.
         </p>
         <div className="mt-4">
-          <RunPipelineForm
-            clientId={clientId}
-            defaultEmail={client.contactEmail ?? ""}
-          />
+          {isWorkflowEnabled() ? <DurablePipelineForm key={`${context!.tenantId}:${clientId}`} tenantId={context!.tenantId} clientId={clientId}
+            syntheticContact={Boolean(client.contactEmail && /^[^@\s]+@[^@\s]+\.test$/i.test(client.contactEmail))} /> :
+            <RunPipelineForm clientId={clientId} defaultEmail={client.contactEmail ?? ""} />}
         </div>
       </section>
+
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-medium text-slate-900">New project</h2>

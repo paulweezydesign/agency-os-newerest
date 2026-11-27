@@ -143,6 +143,7 @@ export const handleDecideDesignReview = async (input: {
     const parsed = decideDesignReviewInputSchema.parse(input.body);
     const review = await input.service.decide({
       tenantId: portal.context.tenantId,
+      projectId: input.projectId,
       reviewId: input.reviewId,
       decision: parsed.decision,
       annotation: parsed.annotation,

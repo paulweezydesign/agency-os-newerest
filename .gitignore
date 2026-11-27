@@ -36,3 +36,5 @@ next-env.d.ts
 
 # git worktrees
 .worktrees/
+
+/.scratch/demo-evidence/

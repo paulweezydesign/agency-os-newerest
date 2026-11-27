@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AuthSession } from "@/lib/auth/session-context";
 import { createInMemoryAgentActionLogRepository } from "@/lib/agent-action-logs/agent-action-log-repository";
 import {
@@ -80,6 +80,51 @@ describe("handleRequestPolicyGate", () => {
 });
 
 describe("handleDecidePolicyGate", () => {
+  it("returns a safe recovery error and permits an explicit operator recovery", async () => {
+    const repository = createInMemoryPolicyGateRepository();
+    vi.spyOn(repository, "completeDryRun").mockRejectedValueOnce(new Error("private diagnostic"));
+    const runEffect = vi.fn();
+    const service = createPolicyGateService(repository,
+      createInMemoryAgentActionLogRepository(), runEffect);
+    const gate = await service.request({ tenantId: "tenant-default", actionType: "client_email",
+      payload: { to: "lead@example.test" }, requestedBy: "operator", correlationId: "failure", dryRun: true });
+    const result = await handleDecidePolicyGate({ service, session: operatorSession,
+      gateId: gate.id, body: { decision: "approve" } });
+    expect(result).toEqual({ status: 503, body: { error: "Dry-run effect requires explicit recovery" } });
+    const recovered = await handleDecidePolicyGate({ service, session: operatorSession,
+      gateId: gate.id, body: { decision: "recover" } });
+    expect(recovered.status).toBe(200);
+    expect(runEffect).not.toHaveBeenCalled();
+  });
+
+  it.each(["approve", "deny", "recover"])("enforces role and tenant for %s", async (decision) => {
+    const { service, store } = createService();
+    const gate = await service.request({ tenantId: "tenant-default", actionType: "client_email",
+      payload: { to: "lead@example.test" }, requestedBy: "operator", correlationId: "auth", dryRun: true });
+    for (const [session, status] of [
+      [null, 401],
+      [{ user: { id: "viewer", role: "client", tenantId: "tenant-default" } }, 403],
+      [{ user: { id: "other", role: "admin", tenantId: "other-tenant" } }, 404],
+    ] as const) {
+      expect((await handleDecidePolicyGate({ service, gateId: gate.id,
+        session, body: { decision, tenantId: "tenant-default" } })).status).toBe(status);
+    }
+    expect((await service.listPending("tenant-default"))[0]?.id).toBe(gate.id);
+    expect(store.runCount()).toBe(0);
+  });
+
+  it("records the authenticated actor despite a supplied actor override", async () => {
+    const { service } = createService();
+    const created = await handleRequestPolicyGate({ session: operatorSession, service,
+      body: { actionType: "client_email", actorName: "forged-admin", payload: { to: "lead@example.test" } } });
+    if (created.status !== 201) throw new Error("expected created");
+    expect(created.body.requestedBy).toBe("agent-operator:user-1");
+    const denied = await handleDecidePolicyGate({ session: operatorSession, service,
+      gateId: created.body.id, body: { decision: "deny", actorName: "forged-admin" } });
+    if (denied.status !== 200) throw new Error("expected denied");
+    expect(denied.body.decidedBy).toBe("agent-operator:user-1");
+  });
+
   it("approves and runs the demo effect once", async () => {
     const { service, store } = createService();
     const created = await handleRequestPolicyGate({
@@ -183,12 +228,7 @@ describe("handleListPolicyGates", () => {
       body: { actionType: "client_email", payload: { to: "a@example.com" } },
     });
 
-    const other = createPolicyGateService(
-      createInMemoryPolicyGateRepository(),
-      createInMemoryAgentActionLogRepository(),
-      createDemoEffectRunner(createDemoEffectStore()),
-    );
-    await other.request({
+    await service.request({
       tenantId: "other-tenant",
       actionType: "client_email",
       payload: {},
@@ -208,4 +248,12 @@ describe("handleListPolicyGates", () => {
     expect(listed.body).toHaveLength(1);
     expect(listed.body[0]?.tenantId).toBe("tenant-default");
   });
+});
+
+it("rejects historical-format synthetic requests with a deliberate API conflict", async () => {
+  const { service } = createService();
+  const response = await handleRequestPolicyGate({ session: operatorSession, service,
+    body: { actionType: "client_email", payload: { to: "legacy@example.test", executionMode: "dry-run" } } });
+  expect(response).toMatchObject({ status: 409, body: { error: expect.stringContaining("explicit dryRun") } });
+  expect(await service.list("tenant-default")).toHaveLength(0);
 });

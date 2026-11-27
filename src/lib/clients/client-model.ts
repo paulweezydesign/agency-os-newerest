@@ -5,6 +5,9 @@ const clientSchema = new Schema(
     tenantId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     contactEmail: { type: String, required: false },
+    // Set atomically before a bounded synthetic workflow changes pipeline state.
+    // Legacy writes require this optional field to be absent.
+    workflowRunId: { type: String, required: false },
     pipelineStage: {
       type: String,
       required: true,

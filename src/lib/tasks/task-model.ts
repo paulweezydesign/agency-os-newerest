@@ -23,8 +23,8 @@ const taskSchema = new Schema(
 
 taskSchema.index({ tenantId: 1, projectId: 1 });
 taskSchema.index({ tenantId: 1, _id: 1 });
-taskSchema.index({ mondayItemId: 1 }, { sparse: true });
-taskSchema.index({ linearIssueId: 1 }, { sparse: true });
+// Tracker indexes are declared once on their paths above. Keep the ordinary
+// indexes already created by existing deployments; do not implicitly migrate them.
 
 export type TaskDocument = InferSchemaType<typeof taskSchema> & {
   _id: mongoose.Types.ObjectId;

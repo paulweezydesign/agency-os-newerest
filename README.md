@@ -30,3 +30,11 @@ Seed sign-in accounts:
 - `docs/plan.md` — living implementation board
 - `docs/architecture.md` — architecture notes
 - `.scratch/agencyos-v1/issues/` — tickets
+
+## Local durable workflow demonstration
+
+See [the repeatable local demo](docs/local-workflow-demo.md) for `npm run demo:workflow`: isolated Mongo, existing local-demo sign-in, synthetic approval/denial and real Mastra resume, with browser and persisted evidence. The older `demo`/`seed` scripts run test stand-ins.
+
+## OpenAI synthetic agent run
+
+See [OpenAI provider setup](docs/openai-bounded-provider.md) to use your server-side API key with `gpt-6-astra` for the separate fictional Task-to-brief path. It is disabled by default, requires a Mongo replica set, and has no production or broad agent-chat integration.
